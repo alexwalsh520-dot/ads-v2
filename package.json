@@ -1,0 +1,36 @@
+{
+  "name": "ads-v2",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One table that tells you what every ad actually returned, all the way from spend to cash.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "migrate": "node scripts/migrate.mjs",
+    "calendars": "node scripts/list-calendars.mjs",
+    "sync": "node scripts/sync.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
+    "lucide-react": "^0.575.0",
+    "next": "16.1.6",
+    "next-auth": "^5.0.0-beta.30",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^17.3.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}

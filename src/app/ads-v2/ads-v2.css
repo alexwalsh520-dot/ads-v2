@@ -1,0 +1,1793 @@
+/* Ads v2 - ported faithfully from the v1 ads export (public/ads-tracker-export.html).
+   Same tokens, fonts, spacing, and table styling. Scoped under .adsv2 so it
+   never touches the rest of the app. The Daily budget column and the gear panel
+   are the only new UI and are styled to blend in. */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+.adsv2 {
+  --bg: #0a0a0a;
+  --bg-1: #0d0d0d;
+  --panel: #111111;
+  --panel-2: #141414;
+  --row-hover: #141414;
+  --border: #1f1f1f;
+  --border-2: #262626;
+  --focus: #2a2a2a;
+  --text: #e8e8e8;
+  --text-1: #f4f4f4;
+  --text-2: #a8a8a8;
+  --text-3: #6b6b6b;
+  --text-4: #4a4a4a;
+  --green: #7dd3a8;
+  --green-dim: #4f9b76;
+  --red: #e89a94;
+  --red-dim: #a36560;
+  --gold: #d4b27a;
+  --gold-dim: #8a7348;
+  --blue: #7aa7d4;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  letter-spacing: -0.005em;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+  padding: 24px 28px 80px;
+}
+
+html.light .adsv2 {
+  --bg: #f6f6f4;
+  --bg-1: #fbfbfa;
+  --panel: #ffffff;
+  --panel-2: #f0f0ee;
+  --row-hover: #f3f3f1;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-2: rgba(0, 0, 0, 0.16);
+  --focus: rgba(0, 0, 0, 0.26);
+  --text: #18181b;
+  --text-1: #111110;
+  --text-2: #3f3f46;
+  --text-3: #71717a;
+  --text-4: #9a9aa3;
+  --green: #3f9e6b;
+  --green-dim: #6fae90;
+  --red: #c0504a;
+  --red-dim: #cf8b86;
+  --gold: #a9823f;
+  --gold-dim: #b89a6a;
+  --blue: #4f7fb0;
+}
+
+.adsv2 * {
+  box-sizing: border-box;
+}
+
+.adsv2 .av2-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.adsv2 .av2-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+}
+.adsv2 .av2-title .av2-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.adsv2 .av2-sub {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.adsv2 .av2-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* filter bar */
+.adsv2 .filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.adsv2 .filter {
+  position: relative;
+}
+.adsv2 .filter-btn,
+.adsv2 .icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 12px;
+  min-height: 30px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.adsv2 .filter-btn:hover,
+.adsv2 .icon-btn:hover {
+  background: var(--panel-2);
+}
+/* Settings is a plain square gear button, no label. Sized to match the
+   sidebar's bottom-left settings gear: an 18px glyph in a comfortable hit area
+   (the sidebar link box is ~20px icon + 10px/12px padding), radius 8px. */
+.adsv2 .gear-btn {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--text-2);
+}
+.adsv2 .gear-btn:hover {
+  color: var(--text);
+}
+.adsv2 .gear-btn .i {
+  display: block;
+}
+.adsv2 .filter-btn.open {
+  background: var(--panel-2);
+  border-color: var(--focus);
+}
+.adsv2 .filter-btn .lbl {
+  color: var(--text-3);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-right: 2px;
+}
+.adsv2 .filter-btn .val {
+  color: var(--text);
+  font-size: 12px;
+}
+.adsv2 .filter-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border-2);
+  margin: 0 4px;
+}
+.adsv2 .spacer {
+  flex: 1;
+}
+
+.adsv2 .pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  z-index: 50;
+  min-width: 220px;
+  padding: 6px;
+}
+.adsv2 .pop-item {
+  padding: 7px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: var(--text-2);
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+  align-items: center;
+}
+.adsv2 .pop-item:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+.adsv2 .pop-item .check {
+  color: var(--gold);
+  font-size: 10px;
+  opacity: 0;
+}
+.adsv2 .pop-item.selected .check {
+  opacity: 1;
+}
+
+.adsv2 .segmented {
+  display: inline-flex;
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  background: var(--panel);
+  padding: 2px;
+  height: 30px;
+}
+.adsv2 .seg {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-3);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+}
+.adsv2 .seg:hover {
+  color: var(--text-2);
+}
+.adsv2 .seg.active {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+/* table view toggle (Campaign / Ad set / Ad level) - ported verbatim from v1
+   (.tbl-toolbar > .tbl-view-toggle > .tvt-btn), lives atop the table panel. */
+.adsv2 .tbl-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+}
+.adsv2 .tbl-view-toggle {
+  display: inline-flex;
+  background: var(--bg);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+.adsv2 .tvt-btn {
+  padding: 5px 11px;
+  font-size: 11.5px;
+  color: var(--text-3);
+  border-radius: 4px;
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.12s;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+.adsv2 .tvt-btn:hover {
+  color: var(--text);
+}
+.adsv2 .tvt-btn.active {
+  background: var(--panel-2);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-2);
+}
+.adsv2 .tvt-count {
+  font-size: 9.5px;
+  color: var(--gold);
+  background: var(--panel-2);
+  border: 1px solid var(--border-2);
+  border-radius: 99px;
+  padding: 1px 6px;
+  letter-spacing: 0;
+}
+.adsv2 .tbl-toolbar-meta {
+  font-size: 11px;
+  color: var(--text-4);
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.adsv2 .tbl-sel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--text-2);
+  background: var(--panel-2);
+  border: 1px solid var(--border-2);
+  border-radius: 99px;
+  padding: 3px 6px 3px 11px;
+}
+.adsv2 .tbl-sel-clear {
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-3);
+  width: 16px;
+  height: 16px;
+  border-radius: 99px;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* preparing state (window has no snapshot yet; building in the background) */
+.adsv2 .preparing-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.adsv2 .preparing-state .dots {
+  color: var(--gold);
+}
+
+/* table */
+.adsv2 .panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  overflow: hidden;
+}
+.adsv2 .tbl-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+.adsv2 table.ads {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  /* Fixed layout so per-column widths are honored exactly: dragging a column
+     narrower clips its text (cells are nowrap + ellipsis), never wraps it. The
+     overall width is set inline from the sum of the column widths. */
+  table-layout: fixed;
+}
+/* draggable column resize handle on every header, ported from v1 */
+.adsv2 .col-resize {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 4;
+}
+.adsv2 .col-resize:hover,
+.adsv2 table.ads thead th .col-resize.active {
+  background: linear-gradient(90deg, transparent, var(--gold) 50%, transparent);
+}
+.adsv2 table.ads thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  text-align: right;
+  padding: 11px 14px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-2);
+  z-index: 2;
+}
+.adsv2 table.ads thead th:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: var(--panel);
+  z-index: 3;
+  padding-left: 20px;
+}
+.adsv2 table.ads thead th.sortable-th {
+  cursor: pointer;
+  user-select: none;
+}
+.adsv2 table.ads thead th.sorted {
+  color: var(--gold);
+}
+.adsv2 .sort-arrow {
+  font-size: 9px;
+  color: var(--text-4);
+  margin-left: 6px;
+}
+.adsv2 table.ads thead th.calc {
+  background: var(--bg-1);
+  color: var(--gold-dim);
+}
+.adsv2 table.ads tbody td.calc {
+  background: var(--bg-1);
+}
+/* Per-row calc backgrounds, a line-for-line mirror of v1 (lines 395-400 of
+   public/ads-tracker-export.html). Flat rows set NO background of their own, so
+   the calc columns keep the --bg-1 tint at every level, at rest and on hover. */
+.adsv2 table.ads tbody tr.campaign-row td.calc {
+  background: var(--bg-1);
+}
+.adsv2 table.ads tbody tr.campaign-row:hover td.calc {
+  background: var(--panel);
+}
+.adsv2 table.ads tbody tr:hover td.calc {
+  background: var(--panel);
+}
+.adsv2 table.ads tbody tr.total-row td.calc {
+  background: var(--bg);
+}
+.adsv2 table.ads tbody td {
+  padding: 11px 14px;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adsv2 table.ads tbody td:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: var(--panel);
+  z-index: 1;
+  padding-left: 20px;
+}
+.adsv2 table.ads tbody tr:hover td {
+  background: var(--row-hover);
+}
+.adsv2 table.ads tbody tr.campaign-row td {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border-2);
+  font-weight: 500;
+}
+.adsv2 table.ads tbody tr.campaign-row td:first-child {
+  background: var(--panel);
+}
+.adsv2 table.ads tbody tr.campaign-row:hover td {
+  background: var(--panel);
+}
+.adsv2 table.ads tbody tr.campaign-row:hover td:first-child {
+  background: var(--panel);
+}
+.adsv2 table.ads tbody tr.total-row td {
+  background: var(--bg-1);
+  font-weight: 500;
+  border-top: 1px solid var(--border-2);
+  color: var(--text-2);
+}
+.adsv2 table.ads tbody tr.total-row td:first-child {
+  background: var(--bg-1);
+  color: var(--text-2);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+/* Flat level rows (v1 lines 427-437). NOTE: no td background overrides at all,
+   so the cells inherit the defaults and the calc tint always shows through. */
+.adsv2 .flat-row:hover {
+  background: var(--panel-2);
+}
+.adsv2 .flat-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  overflow: hidden;
+}
+.adsv2 .flat-camp {
+  color: var(--text-3);
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+.adsv2 .flat-sep {
+  color: var(--text-4);
+}
+.adsv2 .flat-name {
+  color: var(--text);
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* v2 only: the name column is drag-resizable, so the fixed chrome in a flat cell
+   must not shrink. Only the campaign and name text ellipsize. */
+.adsv2 .flat-cell > .camp-check,
+.adsv2 .flat-cell > .chevron,
+.adsv2 .flat-cell > .camp-dot,
+.adsv2 .flat-cell > .flat-sep,
+.adsv2 .flat-cell > .ad-count-chip,
+.adsv2 .flat-cell > .status-pill {
+  flex: 0 0 auto;
+}
+.adsv2 .flat-cell > .flat-camp,
+.adsv2 .flat-cell > .flat-name {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+/* v1 renders table numbers in the body font (Inter) with tabular figures, NOT
+   a mono font. Match that: tabular-nums only, no font-family override. */
+.adsv2 .num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+.adsv2 .filter-btn .caret {
+  color: var(--text-3);
+  font-size: 9px;
+  margin-left: 2px;
+  display: inline-flex;
+}
+.adsv2 .mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.adsv2 .pos {
+  color: var(--green);
+}
+.adsv2 .neg {
+  color: var(--red);
+}
+.adsv2 .dim {
+  color: var(--text-3);
+}
+/* Threshold colors must win at EVERY level in the base state (mouse untouched),
+   exactly like v1. The row-type selector tr.total-row td sets a neutral text
+   color at higher specificity than a plain `.pos`, which was swallowing the
+   green/red on total rows. These table-scoped rules match that specificity and,
+   coming later in source, win. Row hover only changes the cell background
+   (above), never these hues, so a colored cell reads the same hue hovered or
+   not. */
+.adsv2 table.ads tbody tr td.pos {
+  color: var(--green);
+}
+.adsv2 table.ads tbody tr td.neg {
+  color: var(--red);
+}
+.adsv2 table.ads tbody tr td.dim {
+  color: var(--text-3);
+}
+
+.adsv2 .campaign-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+}
+/* Only the name text flexes; the checkbox, chevron, dot, ads chip, and status
+   pill keep their size so the name is what ellipsizes when the column narrows. */
+.adsv2 .campaign-cell > .camp-check,
+.adsv2 .campaign-cell > .chevron,
+.adsv2 .campaign-cell > .camp-dot,
+.adsv2 .campaign-cell > .ad-count-chip,
+.adsv2 .campaign-cell > .status-pill {
+  flex: 0 0 auto;
+}
+.adsv2 .indent-1 {
+  padding-left: 22px;
+}
+.adsv2 .indent-2 {
+  padding-left: 44px;
+}
+.adsv2 .camp-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+}
+/* Creator dot colours, assigned by position in the configured list rather than
+   by name, so any creator gets a stable colour without touching this file. */
+.adsv2 .camp-dot.c0 {
+  background: var(--gold);
+}
+.adsv2 .camp-dot.c1 {
+  background: var(--blue);
+}
+.adsv2 .camp-dot.c2 {
+  background: var(--green);
+}
+.adsv2 .camp-dot.c3 {
+  background: var(--red);
+}
+.adsv2 .camp-dot.c4 {
+  background: var(--text-2);
+}
+.adsv2 .camp-dot.c5 {
+  background: var(--text-3);
+}
+.adsv2 .chevron {
+  color: var(--text-4);
+  font-size: 9px;
+  width: 10px;
+  cursor: pointer;
+  flex: none;
+}
+.adsv2 .camp-name {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* No fixed cap: the name column auto-fits to the longest visible name, so the
+     full text shows by default. min-width:0 lets it ellipsize (not overflow)
+     only when the drag handle narrows the column. */
+  min-width: 0;
+  flex: 0 1 auto;
+}
+/* status pill - ported verbatim from v1: the base pill IS the green "active"
+   look (rounded 99px, green tint); finished/empty override to grey. */
+.adsv2 .status-pill {
+  font-size: 9px;
+  color: var(--green);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid rgba(125, 211, 168, 0.18);
+  border-radius: 99px;
+  background: rgba(125, 211, 168, 0.045);
+  margin-left: 4px;
+  flex: 0 0 auto;
+}
+.adsv2 .status-pill.finished {
+  color: var(--text-4);
+  border-color: var(--border-2);
+  background: var(--panel);
+}
+.adsv2 .status-pill.empty {
+  color: var(--text-4);
+  border-color: var(--border-2);
+  background: var(--bg);
+}
+.adsv2 .ad-count-chip {
+  font-size: 9.5px;
+  color: var(--text-4);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 1px 7px;
+  margin-left: 4px;
+  letter-spacing: 0.02em;
+}
+.adsv2 .camp-check {
+  width: 13px;
+  height: 13px;
+  accent-color: var(--gold);
+  cursor: pointer;
+  flex: none;
+}
+/* ad name doubles as the creative-preview trigger at ad level */
+.adsv2 .ad-name-preview {
+  cursor: zoom-in;
+}
+.adsv2 .ad-name-preview:hover {
+  color: var(--text-1);
+}
+.adsv2 .budget-cell {
+  color: var(--text);
+}
+.adsv2 .budget-cell .b-lvl {
+  color: var(--text-4);
+  font-size: 9px;
+  margin-left: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* info-hover (column definition) */
+.adsv2 .info-dot {
+  color: var(--text-4);
+  font-size: 9px;
+  margin-left: 5px;
+  cursor: help;
+}
+.adsv2 .info-tip,
+.adsv2 .call-hover,
+.adsv2 .ad-preview-popover {
+  position: fixed;
+  z-index: 90;
+  background: var(--bg-1);
+  border: 1px solid var(--border-2);
+  border-radius: 9px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+.adsv2 .info-tip {
+  width: min(300px, calc(100vw - 20px));
+  padding: 10px 12px;
+}
+.adsv2 .info-tip .it-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin-bottom: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.adsv2 .info-tip .it-body {
+  font-size: 11.5px;
+  color: var(--text-2);
+  line-height: 1.45;
+}
+.adsv2 .info-tip .it-src {
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-top: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* call hover */
+.adsv2 .call-hover {
+  width: min(460px, calc(100vw - 20px));
+  max-height: calc(100vh - 20px);
+  overflow: hidden;
+  padding: 11px 12px 12px;
+}
+.adsv2 .call-hover-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin-bottom: 2px;
+}
+.adsv2 .call-hover-proof {
+  font-size: 11.5px;
+  color: var(--gold);
+  margin-bottom: 9px;
+  font-weight: 600;
+}
+.adsv2 .ch-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+.adsv2 .ch-tbl th {
+  text-align: left;
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 9.5px;
+  padding: 0 8px 5px 0;
+  border-bottom: 1px solid var(--border-2);
+}
+.adsv2 .ch-tbl td {
+  padding: 4px 8px 4px 0;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.adsv2 .ch-tbl td.nm {
+  color: var(--text-1);
+  font-weight: 600;
+}
+.adsv2 .ch-more {
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-top: 6px;
+}
+.adsv2 .ch-note {
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border-2);
+  white-space: normal;
+  line-height: 1.45;
+}
+.adsv2 .ch-status {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border-2);
+}
+.adsv2 .ch-status.showed {
+  color: var(--green);
+  border-color: var(--green-dim);
+}
+.adsv2 .ch-status.noshow {
+  color: var(--red);
+  border-color: var(--red-dim);
+}
+.adsv2 .ch-status.upcoming {
+  color: var(--gold);
+  border-color: var(--gold-dim);
+}
+/* Time passed, no record either way. Neutral grey; never reads as a show. */
+.adsv2 .ch-status.no_outcome {
+  color: var(--text-3);
+  border-color: var(--border-2);
+}
+
+/* image preview */
+.adsv2 .ad-preview-popover {
+  width: min(340px, calc(100vw - 28px));
+  max-height: calc(100vh - 28px);
+  padding: 8px;
+}
+.adsv2 .ad-preview-image {
+  display: block;
+  width: 100%;
+  max-height: calc(100vh - 44px);
+  object-fit: contain;
+  border-radius: 5px;
+  background: var(--bg);
+}
+
+/* date calendar - ported verbatim from v1 (.date-pop / MiniCalendar) */
+.adsv2 .date-pop {
+  width: 520px;
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  padding: 0;
+}
+.adsv2 .date-presets {
+  border-right: 1px solid var(--border);
+  padding: 6px;
+}
+.adsv2 .date-cal {
+  padding: 12px 14px;
+}
+.adsv2 .cal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 10px;
+}
+.adsv2 .cal-nav {
+  color: var(--text-3);
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+.adsv2 .cal-nav:hover {
+  color: var(--text);
+}
+.adsv2 .cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  font-size: 11px;
+}
+.adsv2 .cal-dow {
+  color: var(--text-4);
+  text-align: center;
+  padding: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.adsv2 .cal-day {
+  text-align: center;
+  padding: 5px 0;
+  color: var(--text-2);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 11px;
+}
+.adsv2 .cal-day.in-range {
+  background: var(--panel-2);
+  color: var(--text);
+}
+.adsv2 .cal-day.endpoint {
+  background: var(--gold);
+  color: var(--bg);
+  font-weight: 600;
+}
+.adsv2 .cal-day.muted {
+  color: var(--text-4);
+}
+.adsv2 .cal-day.trail {
+  visibility: hidden;
+}
+.adsv2 .date-foot {
+  border-top: 1px solid var(--border);
+  padding: 10px 14px;
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.adsv2 .apply-btn {
+  padding: 5px 12px;
+  border-radius: 5px;
+  background: var(--gold);
+  color: var(--bg);
+  font-weight: 600;
+  font-size: 11px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.adsv2 .apply-btn:hover {
+  filter: brightness(1.08);
+}
+.adsv2 .ghost-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-3);
+  border: 1px solid var(--border-2);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* gear modal */
+.adsv2 .modal-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 60px 16px;
+  overflow-y: auto;
+}
+.adsv2 .modal {
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  width: min(720px, 100%);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+}
+.adsv2 .modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-2);
+}
+.adsv2 .modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.adsv2 .modal-close {
+  cursor: pointer;
+  color: var(--text-3);
+  font-size: 18px;
+  background: none;
+  border: none;
+}
+.adsv2 .modal-body {
+  padding: 18px 20px 24px;
+}
+.adsv2 .gear-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.adsv2 .gear-tab {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-3);
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: none;
+  font-family: inherit;
+}
+.adsv2 .gear-tab.active {
+  color: var(--text);
+  border-color: var(--border-2);
+  background: var(--panel-2);
+}
+.adsv2 .sec-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin: 18px 0 8px;
+}
+.adsv2 .kw-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.adsv2 .kw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-2);
+  background: var(--bg-1);
+  font-size: 11px;
+  color: var(--text);
+}
+.adsv2 .kw-chip button {
+  background: none;
+  border: none;
+  color: var(--text-4);
+  cursor: pointer;
+  font-size: 12px;
+}
+.adsv2 .kw-chip button:hover {
+  color: var(--red);
+}
+.adsv2 .kw-input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-2);
+  background: var(--bg-1);
+  color: var(--text);
+  font-size: 12px;
+  font-family: inherit;
+}
+.adsv2 .how-col {
+  border-top: 1px solid var(--border);
+  padding: 9px 0;
+}
+.adsv2 .how-col .h-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+.adsv2 .how-col .h-rule {
+  font-size: 11.5px;
+  color: var(--text-2);
+  margin-top: 3px;
+  line-height: 1.45;
+}
+.adsv2 .how-col .h-src {
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-top: 3px;
+}
+.adsv2 .how-note {
+  font-size: 11.5px;
+  color: var(--text-2);
+  line-height: 1.5;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+.adsv2 .how-chain {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.adsv2 .how-chain li {
+  font-size: 11.5px;
+  color: var(--text-2);
+  margin: 4px 0;
+  line-height: 1.4;
+}
+.adsv2 .freshness {
+  font-size: 11px;
+  color: var(--text-3);
+}
+.adsv2 .freshness .stale {
+  color: var(--red);
+}
+
+/* "How your numbers work" legend - real hierarchy, readable, skimmable. */
+.adsv2 .how-legend {
+  max-width: 640px;
+}
+.adsv2 .legend-intro {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.6;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 0 0 4px;
+}
+.adsv2 .legend-section {
+  margin-top: 26px;
+}
+.adsv2 .legend-h {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin: 0 0 6px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--border-2);
+}
+.adsv2 .legend-row {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  gap: 20px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+}
+.adsv2 .legend-row:last-child {
+  border-bottom: none;
+}
+.adsv2 .legend-term {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.5;
+}
+.adsv2 .legend-def {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+.adsv2 .legend-src {
+  display: block;
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-top: 5px;
+}
+.adsv2 .legend-chain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.adsv2 .legend-chain li {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.6;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.adsv2 .legend-chain li:last-child {
+  border-bottom: none;
+}
+.adsv2 .legend-note {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+.adsv2 .legend-fresh {
+  font-size: 11.5px;
+  color: var(--text-3);
+  line-height: 1.8;
+}
+.adsv2 .legend-fresh .stale {
+  color: var(--red);
+}
+.adsv2 .notice-bar {
+  background: var(--bg-1);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 11.5px;
+  color: var(--text-2);
+  margin-bottom: 14px;
+}
+.adsv2 .empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.adsv2 .loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-4);
+  font-size: 12px;
+}
+
+/* ── Public share view + operator share manager ─────────────────────────── */
+/* The public page has no sidebar/layout padding, so the tab provides its own. */
+.pub-ads-v2-page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 28px 32px 64px;
+}
+.pub-unavailable {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 24px;
+}
+.pub-unavailable-card {
+  max-width: 420px;
+  text-align: center;
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 28px 26px;
+  background: var(--panel);
+}
+.pub-unavailable-card h1 {
+  font-size: 18px;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+.pub-unavailable-card p {
+  font-size: 13px;
+  color: var(--text-3);
+  margin: 0;
+}
+.adsv2 .share-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 14px;
+  flex-wrap: wrap;
+}
+.adsv2 .share-url {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-size: 12px;
+  font-family: var(--mono);
+  padding: 7px 10px;
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--text-2);
+}
+.adsv2 .ghost-btn.danger {
+  color: var(--red);
+  border-color: var(--red-dim);
+}
+
+/* ── "How this app protects itself" panel (live proofs, read-only) ───────── */
+.adsv2 .protects {
+  display: flex;
+  flex-direction: column;
+}
+.adsv2 .protect-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.adsv2 .protect-row:last-child {
+  border-bottom: none;
+}
+.adsv2 .protect-sentence {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-2);
+  flex: 1 1 auto;
+}
+.adsv2 .protect-status {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+  white-space: nowrap;
+  padding-top: 1px;
+}
+.adsv2 .protect-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--green-dim);
+  flex: 0 0 auto;
+}
+.adsv2 .protect-status.warn {
+  color: var(--red);
+}
+.adsv2 .protect-status.warn .protect-dot {
+  background: var(--red);
+}
+
+/* ── Metrics section: a verbatim port of v1's metric + chart CSS
+      (public/ads-tracker-export.html, lines 499-608). Values copied exactly;
+      only the .adsv2 scope and multi-line formatting differ. ─────────────── */
+.adsv2 .grid-charts {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 18px;
+  margin-top: 28px;
+  align-items: start;
+}
+.adsv2 .chart-column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .adsv2 .grid-charts {
+    grid-template-columns: 1fr;
+  }
+}
+.adsv2 .chart-actions-cell {
+  min-width: 0;
+}
+.adsv2 .metric-board-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 28px 0 10px;
+}
+.adsv2 .metric-board-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--text);
+}
+.adsv2 .metric-board-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.adsv2 .metric-board-btn {
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  /* v2 only: these are <button>s, so they need the app font and a pointer. */
+  font-family: inherit;
+  cursor: pointer;
+}
+.adsv2 .metric-board-btn:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+.adsv2 .metric-board-btn.active {
+  background: var(--panel-2);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--focus);
+}
+.adsv2 .metric-grid {
+  margin-top: 0;
+}
+.adsv2 .metric-support-grid {
+  margin-top: 18px;
+}
+.adsv2 .metric-card-shell {
+  position: relative;
+  min-width: 0;
+}
+.adsv2 .metric-card-shell.editing .panel {
+  cursor: grab;
+  transition:
+    border-color 0.14s,
+    box-shadow 0.14s,
+    transform 0.32s cubic-bezier(0.22, 0.72, 0.2, 1),
+    opacity 0.14s,
+    background-color 0.14s;
+}
+.adsv2 .metric-card-shell.editing:hover .panel {
+  border-color: var(--focus);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 12px 30px rgba(0, 0, 0, 0.28);
+}
+.adsv2 .metric-card-shell.dragging {
+  pointer-events: auto;
+}
+.adsv2 .metric-drag-placeholder {
+  height: 100%;
+  min-height: 240px;
+  border: 1px dashed var(--focus);
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.018);
+}
+.adsv2 .metric-card-shell.drop-target .panel {
+  border-color: var(--gold-dim);
+  box-shadow: 0 0 0 1px rgba(212, 178, 122, 0.18);
+}
+.adsv2 .metric-floating-card {
+  position: fixed;
+  z-index: 220;
+  pointer-events: none;
+  filter: drop-shadow(0 22px 40px rgba(0, 0, 0, 0.55));
+  transform: scale(1.01);
+  transform-origin: top left;
+}
+.adsv2 .metric-floating-card .panel {
+  border-color: var(--focus);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 24px 60px rgba(0, 0, 0, 0.58);
+}
+body.metric-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+.adsv2 .metric-delete {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  z-index: 4;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text-3);
+  font-size: 17px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* v2 only: <button> reset. */
+  font-family: inherit;
+  cursor: pointer;
+}
+.adsv2 .metric-delete:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+.adsv2 .metric-add-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 58vh;
+  overflow: auto;
+  padding-right: 2px;
+}
+.adsv2 .metric-pick-card {
+  min-height: 78px;
+  padding: 12px;
+  border: 1px solid var(--border-2);
+  border-radius: 7px;
+  background: var(--bg);
+  text-align: left;
+  color: var(--text-2);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  /* v2 only: <button> reset. */
+  font-family: inherit;
+  cursor: pointer;
+}
+.adsv2 .metric-pick-card:hover {
+  background: var(--panel);
+  border-color: var(--focus);
+  color: var(--text);
+}
+.adsv2 .metric-pick-card.selected {
+  border-color: var(--border-2);
+  background: var(--panel);
+  color: var(--text);
+}
+.adsv2 .metric-pick-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+.adsv2 .metric-pick-meta {
+  font-size: 10px;
+  color: var(--text-4);
+  margin-top: 5px;
+  line-height: 1.35;
+}
+.adsv2 .metric-pick-icon {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  flex: 0 0 auto;
+}
+.adsv2 .metric-pick-card.selected .metric-pick-icon {
+  border-color: var(--border-2);
+  color: var(--gold);
+}
+@media (max-width: 700px) {
+  .adsv2 .metric-add-grid {
+    grid-template-columns: 1fr;
+  }
+  .adsv2 .metric-board-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* Chart cards */
+.adsv2 .chart-card {
+  padding: 18px 20px 14px;
+  display: flex;
+  flex-direction: column;
+}
+.adsv2 .chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.adsv2 .chart-title {
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.adsv2 .chart-subtitle {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.adsv2 .chart-big {
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.adsv2 .chart-delta {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.adsv2 .chart-delta.pos {
+  color: var(--green);
+}
+.adsv2 .chart-delta.neg {
+  color: var(--red);
+}
+.adsv2 .chart-sub-label {
+  font-size: 11px;
+  color: var(--text-4);
+}
+.adsv2 .chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.adsv2 .chart-select {
+  font-size: 11px;
+  padding: 5px 8px;
+  max-width: 210px;
+}
+.adsv2 .chart-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-3);
+}
+.adsv2 .chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.adsv2 .chart-sw {
+  width: 10px;
+  height: 2px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* Line chart */
+.adsv2 .lc-wrap {
+  position: relative;
+  width: 100%;
+}
+.adsv2 .lc-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: crosshair;
+}
+.adsv2 .lc-tooltip {
+  position: absolute;
+  top: 0;
+  transform: translate(-50%, -6px);
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 11px;
+  min-width: 150px;
+  max-width: 240px;
+  pointer-events: none;
+  z-index: 3;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+.adsv2 .lc-tt-date {
+  font-size: 10px;
+  color: var(--text-4);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+  font-family: "JetBrains Mono", monospace;
+}
+.adsv2 .lc-tt-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 0;
+}
+.adsv2 .lc-tt-sw {
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+.adsv2 .lc-tt-name {
+  color: var(--text-3);
+  font-size: 10.5px;
+  flex: 1;
+}
+.adsv2 .lc-tt-val {
+  color: var(--text);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* v2 only: pieces v1's metrics section has no equivalent for. Styled with v1's
+   tokens so they blend: the loading line, the info hover on a card title, and
+   the picker footer. */
+.adsv2 .metric-loading {
+  color: var(--text-3);
+  font-size: 13px;
+  padding: 24px 4px;
+}
+.adsv2 .chart-title-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.adsv2 .metric-tip {
+  position: absolute;
+  top: 18px;
+  left: 0;
+  z-index: 5;
+  width: 240px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-2);
+  text-transform: none;
+  letter-spacing: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.adsv2 .metric-tip-src {
+  display: block;
+  margin-top: 5px;
+  color: var(--text-4);
+}
+.adsv2 .modal-sub {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 3px;
+}
+.adsv2 .metric-add-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+.adsv2 .apply-btn {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 7px;
+  border: 1px solid var(--gold-dim);
+  background: var(--gold);
+  color: #1a1408;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ── Ad video preview hovercard (pin + play, loads video only on click) ──── */
+.adsv2 .ad-name-preview {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--border-2);
+  text-underline-offset: 2px;
+}
+.adsv2 .ad-name-preview:hover {
+  text-decoration-color: var(--gold);
+}
+.adprev-card {
+  position: fixed;
+  z-index: 1000;
+  width: 340px;
+  background: #0f0f12;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+.adprev-card.pinned {
+  border-color: var(--gold-dim, #a9823f);
+}
+.adprev-thumbwrap {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+.adprev-media {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #000;
+}
+.adprev-nothumb {
+  padding: 48px 0;
+  text-align: center;
+  color: #8a8a90;
+  font-size: 12px;
+}
+.adprev-play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.adprev-play:hover {
+  background: rgba(0, 0, 0, 0.72);
+}
+.adprev-play-tri {
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-left: 17px solid #fff;
+  margin-left: 4px;
+}
+.adprev-note {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  text-align: center;
+  font-size: 11px;
+  color: #d8d8dc;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.adprev-name {
+  margin-top: 8px;
+  padding: 0 2px 2px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #c8c8ce;
+  word-break: break-word;
+}

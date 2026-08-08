@@ -1,0 +1,115 @@
+{
+  "$comment": [
+    "THE ONE FILE YOU EDIT. Everything about who you run ads for, and where their",
+    "numbers come from, lives here. Nothing about your business is hardcoded in the",
+    "app. Run `npm run doctor` after any change — it checks this file against your",
+    "environment and tells you exactly what is still missing.",
+    "",
+    "Secrets NEVER go in here. This file is committed to git. Tokens go in .env.local",
+    "(locally) or your host's environment variables (in production)."
+  ],
+
+  "reportingTimezone": "America/New_York",
+
+  "creators": [
+    {
+      "$comment": [
+        "One entry per person you run ads for. `key` is the short internal id used",
+        "everywhere — lowercase, no spaces, and never changed once data exists.",
+        "",
+        "`timezone` is the ad account's REPORTING timezone in Meta, not where the",
+        "person lives. Get it wrong and days land in the wrong bucket.",
+        "",
+        "`currency` is the currency Meta BILLS this ad account in. It applies to ad",
+        "spend and budgets only. Sales money is always USD (see docs/DATA-RULES.md).",
+        "",
+        "`salesCalendarIds` are the GoHighLevel calendar ids that count as a SALES",
+        "call. Onboarding calls, coaching calls, and reschedule calendars must NOT",
+        "be listed. Run `npm run calendars` to list the real ids in your data.",
+        "",
+        "`matchTokens` are lowercase fragments that identify this creator wherever",
+        "their name appears in incoming data. Keep them specific enough that two",
+        "creators can never both match the same text."
+      ],
+      "key": "example",
+      "name": "Example Creator",
+      "active": true,
+      "timezone": "America/New_York",
+      "currency": "USD",
+      "adAccountEnv": ["META_AD_ACCOUNT_EXAMPLE"],
+      "tokenEnv": ["META_ACCESS_TOKEN_EXAMPLE"],
+      "salesCalendarIds": [],
+      "matchTokens": ["example"]
+    }
+  ],
+
+  "salesSheet": {
+    "$comment": [
+      "Where the sales tracker lives. Set `enabled` to false and Ads V2 still runs —",
+      "you get spend, DMs and booked calls, but no revenue and therefore no ROAS.",
+      "",
+      "`tabs`: \"monthly\" reads one tab per month named by `monthTabFormat`;",
+      "\"single\" reads one fixed tab named by `tab`.",
+      "",
+      "`columns` maps YOUR sheet's column letters onto the fields Ads V2 needs.",
+      "Only `date` and `prospectName` are required. Every other field left empty",
+      "simply produces no data for that field rather than a wrong guess.",
+      "",
+      "`manychatLink` is the highest-value optional column by a wide margin: it is",
+      "what ties a closed sale back to the DM, and therefore to the ad. Without it",
+      "sales attribute by name matching, which is much weaker."
+    ],
+    "enabled": false,
+    "spreadsheetIdEnv": "GOOGLE_SHEETS_SPREADSHEET_ID",
+    "tabs": "monthly",
+    "monthTabFormat": "MMMM yyyy",
+    "tab": "Sheet1",
+    "headerRows": 1,
+    "lookbackDays": 90,
+    "columns": {
+      "date": "B",
+      "prospectName": "C",
+      "callNumber": "A",
+      "manychatLink": "D",
+      "callTakenStatus": "F",
+      "callLength": "G",
+      "outcome": "I",
+      "closer": "J",
+      "objection": "K",
+      "programLength": "L",
+      "contractedRevenue": "M",
+      "collectedRevenue": "N",
+      "paymentMethod": "O",
+      "setter": "P",
+      "callNotes": "Q",
+      "recordingLink": "R",
+      "offer": "S",
+      "callType": "T"
+    },
+    "winOutcomes": ["win", "won", "closed", "close"],
+    "callTakenYesValues": ["yes", "y", "true", "taken", "showed"]
+  },
+
+  "attribution": {
+    "$comment": [
+      "`keywordFromAdName` is how a spend row learns its keyword, and it is the",
+      "whole join between money spent and DMs received.",
+      "",
+      "THE NAMING RULE: the keyword is the LAST WORD of the ad name. The name is",
+      "split on | : ( ) [ ] { } _ - and the last word of the last piece wins:",
+      "    \"TEST | Direct CTA | TRIM\"   -> trim",
+      "    \"Q3 Scaling (PRIMED)\"        -> primed",
+      "    \"Lead Magnet | 50 | Tempo\"   -> tempo",
+      "Name an ad without its keyword at the end and its spend still records, but",
+      "it can never be credited to a DM, a call, or a sale.",
+      "",
+      "`factsLookbackDays` is how far back every sync rebuilds. It must comfortably",
+      "exceed your longest display window (30 days) plus your sales cycle."
+    ],
+    "keywordFromAdName": true,
+    "factsLookbackDays": 45,
+    "factsUpcomingDays": 60,
+    "spendHistoryDays": 180,
+    "staleHours": 26
+  }
+}
