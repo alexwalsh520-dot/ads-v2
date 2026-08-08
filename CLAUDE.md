@@ -179,25 +179,38 @@ npm run doctor    # tells you both what is left
 **Give them the finished addresses.** Never a template with `YOUR-APP` in it that they
 have to complete themselves.
 
-### ManyChat — where the keyword gets caught
+### ManyChat — start from what they actually have
 
-This is a real, working shape, not a suggestion. Match it.
+**Assume they have almost nothing.** Their setup is one automation: a trigger that
+fires on their keyword, and a message that replies. That is it. No custom fields, no
+action steps, no tags. They have never used an Actions block and they do not know
+the word "webhook".
 
-Their keyword automation already exists. Its trigger is **User sends a message**,
-with *every* keyword listed on it — `mighty, charged, loaded, summit, hammer` and so
-on, all on one trigger. If they split conversations between setters, a **Randomizer**
-sits after the trigger and each branch leads into an Actions block.
+So do not say "in your Actions block". There isn't one. Walk them through adding it.
 
-In that Actions block, two things get added:
+**Check ManyChat Pro first.** External Request is a paid feature. If they cannot find
+it, that is why, and they will assume they are being stupid. Say it up front.
 
-1. **Set User Field** → a custom field called `keyword`, set to **Last Text Input**.
-   That captures whichever word the person actually typed.
-2. **External Request** → the step that sends it over.
+**Step 1 — save the word they sent.** Explain what a custom field is before using the
+term: ManyChat keeps a card on each person, and a custom field is a blank box on that
+card that they name themselves.
 
-**One automation covers every keyword.** Because the word is read from what they
-typed, they do NOT need one automation per keyword. If you tell them to build five
-automations for five keywords you have made their life materially worse for no
-reason.
+- Click the **+** under their existing message box
+- Choose **Action** (tell them this makes an empty box, like a to-do list ManyChat
+  runs for that person — they have probably never added one)
+- **+ Add Action** → **Set User Field**
+- Create a new field called `keyword`
+- Set the value to **Last Text Input**
+
+**Step 2 — send it over.** Same action box, **+ Add Action** → **External Request**.
+Explain what that is: ManyChat telling another app something happened.
+
+**One automation covers every keyword**, because the word is read from what they
+typed. They do NOT need one per keyword. If you have them build five automations for
+five keywords you have made their life materially worse for nothing.
+
+If they happen to have a randomiser splitting setters, the action box goes on each
+branch. Most of them will not have one — do not raise it unless they do.
 
 The External Request itself:
 
@@ -226,11 +239,13 @@ contact runs through. It is not an error, and they will ask about it.
 
 ### ManyChat — the booking automation they have to BUILD
 
-Do not assume this already exists. Most people send the calendar link by hand, or
-from a flow that does not carry anything with it. **They are building this now**, and
-it is the step that makes bookings attributable at all.
+**They send booking links by hand right now.** Pasting the calendar link into the
+chat. There is no automation, no tag, nothing. Do not imply otherwise — they will go
+looking for something that does not exist and conclude they have missed a step.
 
-Walk them through creating it:
+This is new construction, and it is the step that makes bookings attributable at all.
+
+Walk them through it:
 
 1. **Make a tag.** Name it after the calendar it sends — `1_Day_Calendar`,
    `3_Day_Calendar`, whatever calendars they actually offer. One tag per calendar.
@@ -243,10 +258,17 @@ Walk them through creating it:
 https://their-booking-link?utm_content={keyword}
 ```
 
-4. **The `{keyword}` has to be the actual ManyChat custom field, not typed text.**
-   Insert it with the field picker. In the editor it shows as a blue chip. If it is
-   plain black text, it will send the literal characters `{keyword}` to every lead
-   and nothing will attribute. Tell them to check it is blue.
+4. **The `{keyword}` has to be the real ManyChat field, not typed text.** They insert
+   it with the field picker — the little `{ }` button — and choose their `keyword`
+   field. In the editor it then shows as a **blue chip**.
+
+   If it is plain black text, ManyChat sends the literal characters `{keyword}` to
+   every lead and not one booking ever attributes. **Make them look at it and confirm
+   it is blue.** This is the single most common way this setup silently fails.
+
+   Also explain what they are even doing, because they have never heard of a UTM: they
+   are sticking a small label on the end of the link, which travels with the person
+   when they click it, so the booking knows which ad they came from.
 
 From then on the setter's whole job is: apply the tag. The link goes out
 automatically, with that person's keyword already in it.

@@ -58,7 +58,7 @@ ManyChat, and share your sales sheet. That's your side of it.
 
 About 45 minutes, most of it waiting for accounts to create.
 
-**[Full setup guide (PDF) →](docs/DM-Ads-Attribution-Guide.pdf)**
+**[Full setup guide (PDF) →](docs/DM-Ads-Attribution-Guide-v3.pdf)**
 
 ---
 
@@ -140,7 +140,7 @@ on or not.
 
 ## Docs
 
-- **[Setup guide (PDF)](docs/DM-Ads-Attribution-Guide.pdf)** — why this exists, and every step, for a human
+- **[Setup guide (PDF)](docs/DM-Ads-Attribution-Guide-v3.pdf)** — why this exists, and every step, for a human
 - **[DATA-RULES.md](docs/DATA-RULES.md)** — what every number means and when it's allowed to change
 - **[CLAUDE.md](CLAUDE.md)** — how an AI assistant should install and look after this
 

@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
-"""Build docs/DM-Ads-Attribution-Guide.pdf — the one document a human reads.
+"""Build the one document a human reads.
 
-Deliberately contains NO webhook addresses, secrets, or request bodies. Those
-are generated per install and handed over privately by Claude. A setup guide
-that gets shared around must not carry anyone's credentials in it.
+WHO THIS IS FOR, and it matters more than anything else in this file:
+
+A coach who runs DM ads. Right now they keep one Google Sheet per campaign and
+type numbers into it by hand off Ads Manager. Their ManyChat setup is ONE
+automation: someone sends the keyword, ManyChat replies with a message. That is
+all of it. No custom fields. No action steps. No tags. They send booking links
+by hand in the chat. They have never heard of a UTM.
+
+So: assume nothing. Define every term the first time it appears. Start from what
+they already have on screen and add to it. Never say "simply" or "just" about
+something that is not.
+
+Contains NO webhook addresses, secrets, or request bodies — those are generated
+per install and handed over privately.
 
     npm run pdf
 """
@@ -20,15 +31,20 @@ from reportlab.platypus import (
     KeepTogether, ListFlowable, ListItem, PageBreak,
 )
 
-OUT = os.path.join(os.path.dirname(__file__), "..", "docs", "DM-Ads-Attribution-Guide.pdf")
+VERSION = "v3"
+OUT = os.path.join(
+    os.path.dirname(__file__), "..", "docs", f"DM-Ads-Attribution-Guide-{VERSION}.pdf"
+)
 
 INK = colors.HexColor("#16161a")
 MUTED = colors.HexColor("#5f6169")
 FAINT = colors.HexColor("#8b8d95")
 RULE = colors.HexColor("#dcdce0")
 BOXBG = colors.HexColor("#f5f5f3")
+TEACHBG = colors.HexColor("#eef2f5")
 CODEBG = colors.HexColor("#f0f0ee")
 ACCENT = colors.HexColor("#9a7b3f")
+TEACHBAR = colors.HexColor("#5b7d99")
 
 base = getSampleStyleSheet()
 
@@ -41,21 +57,21 @@ S["part"] = ParagraphStyle("part", fontName="Helvetica-Bold", fontSize=9,
                            textColor=ACCENT, spaceBefore=4, spaceAfter=2)
 S["h1"] = ParagraphStyle("h1", fontName="Helvetica-Bold", fontSize=16.5, leading=21,
                          textColor=INK, spaceBefore=24, spaceAfter=5)
-S["h2"] = ParagraphStyle("h2", fontName="Helvetica-Bold", fontSize=11, leading=15,
-                         textColor=INK, spaceBefore=15, spaceAfter=4)
-S["body"] = ParagraphStyle("body", fontName="Helvetica", fontSize=10.3, leading=16,
+S["h2"] = ParagraphStyle("h2", fontName="Helvetica-Bold", fontSize=11.5, leading=15.5,
+                         textColor=INK, spaceBefore=16, spaceAfter=4)
+S["body"] = ParagraphStyle("body", fontName="Helvetica", fontSize=10.5, leading=16.5,
                            textColor=INK, spaceAfter=9)
 S["lead"] = ParagraphStyle("lead", fontName="Helvetica", fontSize=11.5, leading=17.5,
                            textColor=INK, spaceAfter=10)
-S["small"] = ParagraphStyle("small", fontName="Helvetica", fontSize=9.2, leading=13.5,
+S["small"] = ParagraphStyle("small", fontName="Helvetica", fontSize=9.4, leading=14,
                             textColor=MUTED, spaceAfter=7)
-S["cell"] = ParagraphStyle("cell", fontName="Helvetica", fontSize=9.4, leading=13.5, textColor=INK)
-S["cellhead"] = ParagraphStyle("cellhead", fontName="Helvetica-Bold", fontSize=9.4,
-                               leading=13.5, textColor=INK)
-S["code"] = ParagraphStyle("code", fontName="Courier", fontSize=9.2, leading=14, textColor=INK)
-S["callout"] = ParagraphStyle("callout", fontName="Helvetica", fontSize=9.8, leading=14.6, textColor=INK)
-S["li"] = ParagraphStyle("li", fontName="Helvetica", fontSize=10.3, leading=16,
-                         textColor=INK, spaceAfter=5)
+S["cell"] = ParagraphStyle("cell", fontName="Helvetica", fontSize=9.6, leading=14, textColor=INK)
+S["cellhead"] = ParagraphStyle("cellhead", fontName="Helvetica-Bold", fontSize=9.6,
+                               leading=14, textColor=INK)
+S["code"] = ParagraphStyle("code", fontName="Courier", fontSize=9.4, leading=14.5, textColor=INK)
+S["callout"] = ParagraphStyle("callout", fontName="Helvetica", fontSize=10, leading=15, textColor=INK)
+S["li"] = ParagraphStyle("li", fontName="Helvetica", fontSize=10.5, leading=16.5,
+                         textColor=INK, spaceAfter=6)
 
 
 def P(text, style="body"):
@@ -73,16 +89,22 @@ def code(lines):
     return KeepTogether([t, Spacer(1, 10)])
 
 
-def callout(label, text):
+def callout(label, text, kind="warn"):
     inner = Paragraph(f"<b>{label}</b>&nbsp; {text}", S["callout"])
+    bg, bar = (TEACHBG, TEACHBAR) if kind == "teach" else (BOXBG, ACCENT)
     t = Table([[inner]], colWidths=[6.5 * inch])
     t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), BOXBG),
-        ("LINEBEFORE", (0, 0), (0, -1), 2.4, ACCENT),
+        ("BACKGROUND", (0, 0), (-1, -1), bg),
+        ("LINEBEFORE", (0, 0), (0, -1), 2.4, bar),
         ("LEFTPADDING", (0, 0), (-1, -1), 12), ("RIGHTPADDING", (0, 0), (-1, -1), 12),
         ("TOPPADDING", (0, 0), (-1, -1), 10), ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
     ]))
     return KeepTogether([t, Spacer(1, 11)])
+
+
+def teach(label, text):
+    """A 'what this word means' sidebar. Different colour so it reads as optional."""
+    return callout(label, text, kind="teach")
 
 
 def table(rows, widths, head=True):
@@ -106,7 +128,7 @@ def table(rows, widths, head=True):
 def steps(items):
     return ListFlowable(
         [ListItem(Paragraph(t, S["li"]), leftIndent=20) for t in items],
-        bulletType="1", bulletFontName="Helvetica-Bold", bulletFontSize=10.3,
+        bulletType="1", bulletFontName="Helvetica-Bold", bulletFontSize=10.5,
         leftIndent=20, bulletDedent=20, spaceAfter=11,
     )
 
@@ -147,336 +169,532 @@ def A(item):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# PART ONE — the why
+# PART ONE — the problem, described as their actual life
 # ═══════════════════════════════════════════════════════════════════════════
 
 A(P("DM Ads Attribution", "title"))
-A(P("Real ROAS for DM funnels, per ad, updating on its own.", "sub"))
+A(P("Know which ad actually made you money. And stop typing numbers into "
+    "spreadsheets forever.", "sub"))
 A(rule())
 A(Spacer(1, 18))
 
-A(P("Why DM ads are different", "h1"))
-A(P("If you were running a normal funnel, Ads Manager would show you the conversion. "
-    "Someone clicks, they hit a landing page, the pixel fires, and Facebook tells you which "
-    "ad made the sale.", "lead"))
-A(P("DM ads do not work like that. The conversation happens inside Instagram. Facebook never "
-    "sees the booking, never sees the call, and never sees the money. So the column you "
-    "actually care about — <b>which ad produced buyers</b> — does not exist in Ads Manager, "
-    "and never will.", "lead"))
+A(P("Let me guess how you do this right now", "h1"))
+A(P("You launch a campaign. You start a new Google Sheet for it, because the last one got "
+    "messy.", "lead"))
+A(P("Every few days you open Ads Manager, look at what you spent, and type it into the sheet. "
+    "You ask your setter how many people booked. You type that in too. At the end of the month "
+    "you look at what came in and type that in as well.", "lead"))
+A(P("Then you sit there and try to work out which ad did it. And honestly, you cannot. You have "
+    "a spend number, a revenue number, and a feeling.", "lead"))
+A(P("You are not bad at this. Nobody ever built the thing that would let you do it properly. "
+    "That is what this is."))
 
-A(P("And the number it does give you is wrong", "h2"))
-A(P("Facebook reports a cost per DM. That number is consistently optimistic — it counts "
-    "conversations started far more generously than you would. So the one metric you are "
-    "handed is inflated, and you are making budget decisions on it."))
+A(P("Why Facebook cannot help you", "h1"))
+A(P("If you sent people to a website, Facebook would know everything. Someone taps your ad, "
+    "lands on your page, buys — Facebook watches the whole thing and tells you which ad did it."))
+A(P("DM ads do not work that way. The moment someone sends you a DM, everything moves into "
+    "Instagram messages. Facebook cannot see the conversation. It cannot see the call get "
+    "booked. It cannot see the money."))
+A(P("So the one column you actually want — <b>which ad produced buyers</b> — does not exist in "
+    "Ads Manager. It never has, and it never will."))
 
-A(P("Which leaves you doing it by hand", "h2"))
-A(P("Most people running DM ads end up somewhere like this:"))
-A(bullets([
-    "a spreadsheet that gets rebuilt every time you launch a new campaign",
-    "setters logging things manually, every day, and forgetting some of them",
-    "spend in one place, DMs in another, bookings in a third, cash in a fourth",
-    "a monthly total that is roughly right, and no idea which ad produced it",
-]))
-A(P("It is not that you are bad at tracking. It is that nothing was built to track this."))
-
-A(P("So I built it", "h1"))
-A(P("This is the attribution system I use for my own DM ads, and it is what this document "
-    "sets up for you, in your own business, on your own accounts.", "lead"))
-A(P("It follows one person the whole way through, and the connection holds the entire time:"))
-A(code([
-    "they see your ad",
-    "     they DM you the word              ->  a DM",
-    "          they book a call             ->  a booking",
-    "               they show up            ->  a call taken",
-    "                    they pay you       ->  a sale",
-]))
-A(P("Then it adds it up per ad. Not per campaign. Per ad."))
-A(P("So instead of \"we spent $4,000 and made $11,000\", you get one row per ad telling you "
-    "that <i>this</i> one costs $9 a DM and has made three sales, and <i>that</i> one has "
-    "spent $600 and produced nothing."))
-
-A(callout("What changes day to day.",
-          "Once it is set up, every campaign and every ad set you launch from then on is "
-          "tracked automatically. Nobody logs anything. You are not chasing setters for "
-          "numbers. You open one page and the real cost per DM, cost per booked call, show "
-          "rate and ROAS are already sitting there, updated within the hour."))
+A(P("And the number it does show you is not real", "h2"))
+A(P("Facebook shows you a cost per DM. Do not trust it."))
+A(P("Facebook counts a \"conversation\" far more loosely than you would. Someone who taps your "
+    "ad and types nothing can still get counted. So the number looks better than the truth — "
+    "and it is the number you have been making budget decisions on."))
+A(P("Your real cost per DM is almost always worse than what is on the screen. Which means some "
+    "of the ads you think are working are not."))
 
 A(PageBreak())
 
-# ── how it holds together ────────────────────────────────────────────────
+# ── what you get ─────────────────────────────────────────────────────────
 A(P("PART ONE", "part"))
-A(P("How the connection actually holds", "h1"))
-A(P("Worth understanding, because two of the pieces are things only you can do.", "lead"))
-A(P("The keyword is the tracking number. Your ad tells someone to send a word. That same word "
-    "travels the whole way down the funnel:"))
-A(table([
-    ["Where", "What carries the keyword"],
-    ["The ad", "the ad's <b>name</b> in Ads Manager"],
-    ["The DM", "what they actually typed, captured by ManyChat"],
-    ["The booking", "the booking link your setter sends, which carries the keyword in it"],
-    ["The sale", "the ManyChat link pasted on the row in your sales tracker"],
-], [1.5 * inch, 5.0 * inch]))
-A(P("Four links in a chain. Break any one and the rest of that person's journey goes dark — "
-    "not wrong, just unknown, which the dashboard will show you honestly."))
-A(P("The middle two are automatic once set up. The first and last are on you.", "small"))
+A(P("What you get instead", "h1"))
+A(P("One page. One row per ad. Everything that ad actually produced, all the way to cash."))
+A(code([
+    "AD          SPENT    DMs    BOOKED   SHOWED   SALES    CASH     ROAS",
+    "TRIM        $840     94     22       14       3        $4,100   4.9x",
+    "MIGHTY      $610     71     9        5        1        $1,200   2.0x",
+    "SUMMIT      $600     52     4        1        0        $0       0.0x",
+]))
+A(P("Made-up numbers, but that is the shape of it. And look how obvious the decision becomes. "
+    "SUMMIT has eaten $600 and produced nothing. TRIM is printing. You would never have seen "
+    "that in Ads Manager, because Ads Manager stops at the DM."))
 
-A(P("It will not guess", "h1"))
-A(P("If it cannot prove a sale came from a particular ad, it shows as <b>unattributed</b> "
-    "rather than being quietly assigned to whichever ad looks likeliest."))
-A(P("This is on purpose, and it is the reason the numbers are worth anything. Money you can "
-    "see is unaccounted for is a problem you can go and fix. Money silently credited to the "
-    "wrong ad is a decision you will get wrong and never find out about."))
-A(P("Hover any number and it shows you what it was built from.", "small"))
+A(P("And you stop typing things in", "h2"))
+A(P("This is the part people underrate. Once it is running:"))
+A(bullets([
+    "your ad spend comes in by itself, every hour",
+    "every DM records itself the second it lands",
+    "every booked call records itself",
+    "your sales come out of the tracker you already keep",
+]))
+A(P("Nobody logs anything. You are not chasing your setter for numbers on a Monday. You are not "
+    "starting a new sheet for the next campaign. You open one page on your phone and it is "
+    "already correct."))
+A(P("Every campaign and every ad set you launch from then on is tracked from the minute it goes "
+    "live. You do not have to do anything to add it."))
+
+A(P("How much of this do you have to build?", "h2"))
+A(P("Hardly any. You paste a link into Claude and answer questions about your business. It does "
+    "the building."))
+A(P("Your side is four things to copy from four websites, and about twenty minutes inside "
+    "ManyChat, which this guide walks you through click by click."))
 
 A(PageBreak())
 
 # ═══════════════════════════════════════════════════════════════════════════
-# PART TWO — your two jobs
+# PART TWO — teach it properly
 # ═══════════════════════════════════════════════════════════════════════════
 
 A(P("PART TWO", "part"))
-A(P("The two things only you can do", "h1"))
-A(P("Everything else in this document gets done for you. These two do not, and if you skip "
-    "them the dashboard will be empty and you will think it is broken.", "lead"))
+A(P("How it actually works", "h1"))
+A(P("Worth ten minutes. Understand this bit and the rest of the setup makes sense — and you "
+    "will know straight away why a number looks wrong later on.", "lead"))
 
-A(P("1. Name your ads after the keyword", "h1"))
-A(P("Whatever word your ad tells people to send — that is the ad's name in Ads Manager."))
+A(P("Your keyword is a tracking number", "h1"))
+A(P("Think about posting a parcel. It gets a tracking number, and that number stays with it the "
+    "whole way. Warehouse, van, doorstep. You can always find out where it is, because the "
+    "number never leaves the parcel."))
+A(P("Your keyword is that tracking number."))
+A(P("Your ad says <i>DM me TRIM</i>. TRIM is the number on this parcel. And TRIM has to stay "
+    "attached to that person all the way from the ad to the money in your account."))
+
+A(P("Let us follow one person", "h1"))
+A(P("Sarah is scrolling Instagram on a Tuesday."))
+A(P("<b>1. She sees your ad.</b> It says DM me the word TRIM. Behind the scenes this ad is "
+    "<i>named</i> TRIM in Ads Manager, so the system already knows every dollar spent on it "
+    "belongs to the word TRIM."))
+A(P("<b>2. She DMs you TRIM.</b> ManyChat replies to her, the same as it does today. But now it "
+    "also quietly writes down two things: who Sarah is, and that she said TRIM. That is one DM "
+    "on the TRIM row."))
+A(P("<b>3. Your setter chats to her.</b> Nothing changes here. Normal conversation."))
+A(P("<b>4. Your setter books her.</b> Instead of pasting the calendar link by hand, they put a "
+    "tag on her. ManyChat sends her the link automatically — and tucks TRIM inside that link "
+    "where she never sees it. That is one booked call on the TRIM row."))
+A(P("<b>5. She turns up.</b> Your booking tool tells the system she was there. One call taken "
+    "on the TRIM row."))
+A(P("<b>6. She buys.</b> You fill in your sales tracker like you always do, and paste her "
+    "ManyChat chat link onto her row. That link is how the system knows this sale is Sarah — "
+    "and Sarah was TRIM."))
+A(P("<b>Done.</b> $2,000 lands on the TRIM row. You now know, for a fact, that ad produced a "
+    "paying client."))
+
+A(callout("That is the entire system.",
+          "Five handoffs, and the keyword survives every one of them. Everything in the setup "
+          "exists to make one of those handoffs happen without anybody having to think about "
+          "it."))
+
+A(PageBreak())
+
+A(P("PART TWO", "part"))
+A(P("Which handoffs are your job", "h1"))
+A(P("Three of the five happen on their own once you are set up. Two are yours, forever."))
 A(table([
-    ["Your ad says", "Name the ad"],
-    ["DM me TRIM", "<b>TRIM</b>"],
-    ["DM me MIGHTY", "<b>MIGHTY</b>"],
-    ["DM me TEMPO", "<b>TEMPO</b>"],
-], [2.2 * inch, 4.3 * inch]))
-A(P("That is it. Plain. The keyword and nothing else is the cleanest way to do it, and it is "
-    "how I name mine."))
-A(callout("If you want other things in the ad name too, that is fine &mdash; "
-          "but the keyword has to be the LAST word.",
-          "The system reads the last word of the name. So "
-          "<font face='Courier'>Lead Magnet | TRIM</font> works and gives you "
-          "<i>trim</i>. <font face='Courier'>TRIM retarget</font> does not &mdash; it reads "
-          "as <i>retarget</i>, and that ad will never be credited with anything. If you are "
-          "not sure, just name it the keyword."))
-A(P("An ad named wrong is not broken. It still shows up, still shows its spend, and sits "
-    "there with zeros beside it, because nothing can honestly tie a DM to it."))
+    ["The handoff", "Who does it"],
+    ["Ad → keyword", "<b>You.</b> By naming the ad after the keyword"],
+    ["Keyword → DM", "Automatic, once ManyChat is set up"],
+    ["DM → booked call", "Automatic, from the tag your setter applies"],
+    ["Booked call → showed up", "Automatic, from your booking tool"],
+    ["Sale → the person", "<b>You.</b> By pasting the ManyChat link on the sales row"],
+], [2.3 * inch, 4.2 * inch]))
+A(P("Both of yours take about three seconds each, and they are the whole difference between "
+    "real numbers and blank ones. They get a section of their own next."))
 
-A(P("2. Never run the same word twice at once", "h1"))
-A(P("One live ad, one word. If two ads both say <i>DM me TRIM</i> and someone DMs TRIM and "
-    "buys, nothing on earth can tell you which ad did it."))
-A(P("Reusing a word later is fine. Leave a few weeks after turning the first one off, so a "
-    "late DM from the old ad does not get credited to the new one."))
+A(P("What happens when a handoff breaks", "h1"))
+A(P("Nothing dramatic. The chain stops there for that one person, and the system tells you "
+    "instead of making something up."))
+A(P("If an ad is named wrong, that ad shows its spend and zeros everywhere else. If the "
+    "ManyChat link is missing from a sales row, that sale shows as <b>unattributed</b> — real "
+    "money, unknown source."))
+
+A(callout("This is the most important promise in the whole thing.",
+          "It will never guess. If it cannot prove a sale came from a particular ad, it says "
+          "so. Money you can see is unaccounted for is a problem you can go and fix. Money "
+          "quietly credited to the wrong ad would have you scaling the wrong thing and never "
+          "finding out. The blanks are a feature, not a fault."))
+
+A(PageBreak())
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PART THREE — the two habits
+# ═══════════════════════════════════════════════════════════════════════════
+
+A(P("PART THREE", "part"))
+A(P("Two habits, forever", "h1"))
+A(P("No software can do these for you. Skipping them is the number one reason somebody ends up "
+    "staring at an empty dashboard wondering what went wrong.", "lead"))
+
+A(P("Habit 1 — name the ad after the keyword", "h1"))
+A(P("When you make an ad in Ads Manager you give it a name. Whatever word that ad tells people "
+    "to DM you — that is the name."))
+A(table([
+    ["Your ad tells people to send", "Name the ad"],
+    ["TRIM", "<b>TRIM</b>"],
+    ["MIGHTY", "<b>MIGHTY</b>"],
+    ["SUMMIT", "<b>SUMMIT</b>"],
+], [2.6 * inch, 3.9 * inch]))
+A(P("That is genuinely it. Nothing else in the name. The keyword on its own is the cleanest way "
+    "to do it, and it is how I name mine."))
+A(callout("Want other stuff in the name too? Fine — but the keyword must be LAST.",
+          "The system reads the <b>last word</b> of the name. So "
+          "<font face='Courier'>Vets 35 | TRIM</font> works fine and reads as TRIM. But "
+          "<font face='Courier'>TRIM retarget</font> reads as \"retarget\", and that ad will "
+          "never be credited with anything, ever. If in doubt, just name it the keyword."))
+A(P("An ad named wrong is not broken and nothing will warn you. It sits in your list showing "
+    "its spend, with zeros in every other column, forever. That is the system being honest — "
+    "it cannot tie a single DM to that ad, so it will not pretend it can."))
+
+A(P("Habit 2 — one keyword, one live ad", "h1"))
+A(P("Never have two ads running at the same time that both say DM me TRIM."))
+A(P("If you do, and someone DMs TRIM and buys $3,000, there is no way on earth to know which of "
+    "the two ads earned it. That is not a limit of this tool. Nothing could know that."))
+A(P("Using a word again months later is fine. Just leave a few weeks after switching the first "
+    "one off, so a straggler DM from the old ad does not get credited to the new one."))
 
 A(PageBreak())
 
 # ── the sales tracker ────────────────────────────────────────────────────
-A(P("PART TWO", "part"))
+A(P("PART THREE", "part"))
 A(P("Your sales tracker", "h1"))
-A(P("Your sales tracker is where the money lives, so it is what turns this from a funnel "
-    "counter into actual ROAS. You are going to connect it to the system, and it stays "
-    "exactly where it is — you keep working in the same sheet you already use.", "lead"))
-A(callout("This system can only read your sheet.",
-          "It can never write to it, change it, or reorganise it. It also never converts your "
-          "money between currencies &mdash; what you typed is what it shows."))
+A(P("You already keep one. It stays exactly where it is, and you keep working in it exactly the "
+    "same way. The system just reads it.", "lead"))
 
-A(P("The columns it reads", "h1"))
-A(P("You almost certainly have most of these already. The column letters do not matter and "
-    "the names do not matter — you say which is which during setup, once."))
+A(callout("Two promises about your spreadsheet.",
+          "It can only READ your sheet. It can never write to it, change it, move your columns "
+          "or reorganise anything. And it never converts your money between currencies — what "
+          "you typed is what it shows."))
+
+A(P("One sheet, not one per campaign", "h2"))
+A(P("If you currently start a fresh sheet for every campaign, stop doing that. Use one sheet."))
+A(P("The only reason you were splitting them was to keep campaigns apart. That is now a column "
+    "the system fills in for you, automatically, per ad. Far better than a separate file."))
+
+A(P("The columns it reads", "h2"))
+A(P("You almost certainly have most of these already. The names do not matter and the order "
+    "does not matter — Claude reads your sheet, works out which column is which, and shows you "
+    "so you can confirm it got it right."))
 A(table([
-    ["Column", "Why it is needed"],
-    ["<b>Date</b>", "which day the call belongs to. Required."],
-    ["<b>Name</b>", "who it was. Required."],
-    ["<b>ManyChat link</b>", "<b>the important one.</b> Ties the sale back to the DM, and therefore to the ad"],
+    ["Column", "What it is for"],
+    ["<b>Date</b>", "which day the call was. Required"],
+    ["<b>Name</b>", "who it was. Required"],
+    ["<b>ManyChat link</b>", "<b>the big one.</b> How a sale gets tied back to the DM, and so to the ad"],
     ["<b>Did they show</b>", "your show rate, and it separates a no-show from a lost sale"],
-    ["<b>Cash collected</b>", "the money. This is what ROAS is calculated on"],
-    ["<b>Total contracted</b>", "the full deal value, for when it differs from cash in hand"],
+    ["<b>Cash collected</b>", "money actually in the bank. ROAS is worked out from this"],
+    ["<b>Total contracted</b>", "the full deal value, for when it is more than you took today"],
     ["<b>Outcome</b>", "won, lost, no-show, follow-up"],
-    ["<b>Closer</b>", "who took it"],
-    ["<b>Setter</b>", "who set it"],
-], [1.6 * inch, 4.9 * inch]))
+    ["<b>Closer</b> and <b>Setter</b>", "who took it, who set it"],
+], [1.75 * inch, 4.75 * inch]))
 
-A(P("Add the ManyChat link column if you do not have it", "h2"))
-A(P("When your setter books someone, they paste that person's ManyChat conversation link onto "
-    "the row. It takes three seconds and it is the single highest-value habit in this whole "
-    "system."))
-A(P("Without it, sales get matched to DMs by name alone. Two people called Sarah, someone "
-    "using a nickname, a typo — and the match fails silently. With the link it is exact, "
-    "every time."))
+A(P("You probably need to add one column", "h2"))
+A(P("The <b>ManyChat link</b> column. Most people do not have this yet, and it is the single "
+    "most valuable column in the sheet."))
+A(P("When your setter books someone, they open that person in ManyChat, copy the link out of "
+    "the address bar, and paste it on that person's row. Three seconds."))
+A(P("Why it matters so much: without it, a sale gets matched to a DM <i>by name</i>. Two "
+    "Sarahs, someone using a nickname, a typo, a maiden name — and the match quietly fails. "
+    "With the link it is exact, every single time."))
+A(callout("Add this column today, before you set anything else up.",
+          "Rows already in your sheet without it can never be matched afterwards. Every day you "
+          "wait is another day of sales that can never be traced back to an ad."))
 
-A(callout("One thing that stays a human job.",
-          "Whoever takes the call fills in whether they showed and what they paid. Nothing can "
-          "automate that, and the dashboard reads those two columns directly. Empty columns "
-          "mean no show rate and no revenue &mdash; not a bug, just nothing to read."))
+A(P("And someone has to fill it in", "h2"))
+A(P("Whoever takes the call fills in whether they showed up and what they paid. That has always "
+    "been a human job and it stays one. Empty columns mean no show rate and no revenue — not "
+    "broken, just nothing there to read."))
 
 A(PageBreak())
 
 # ═══════════════════════════════════════════════════════════════════════════
-# PART THREE — setting it up
+# PART FOUR — collecting the four things
 # ═══════════════════════════════════════════════════════════════════════════
 
-A(P("PART THREE", "part"))
+A(P("PART FOUR", "part"))
 A(P("Setting it up", "h1"))
-A(P("Open Claude Code and paste in the link to the project. Tell it to install this.", "lead"))
-A(P("It will ask you about your business — what you use for DMs, what you book calls with, "
-    "and what the columns in your sales tracker are called — and then build the whole thing "
-    "around your answers. You do not edit any files."))
-A(P("Roughly 45 minutes, and most of that is waiting for accounts to finish creating.", "small"))
+A(P("Open Claude Code, paste in the link to the project, and tell it to install this.", "lead"))
+A(P("It will ask you questions about your business — what you use for DMs, what you book calls "
+    "with, what your ad account is. Then it builds the whole thing. You do not edit any files "
+    "or write anything technical.", "lead"))
+A(P("If you get stuck anywhere, tell it what you can see on your screen. That genuinely works — "
+    "it will pick up from wherever you are."))
 
-A(P("The four things to go and get", "h1"))
-A(P("Claude cannot log into your accounts for you, so these four are yours. Collect them "
-    "first and the rest goes quickly."))
+A(P("Four things to go and copy", "h1"))
+A(P("Claude cannot log into your accounts, so these four are on you. Get them first and "
+    "everything else goes quickly."))
 A(table([
-    ["", "What", "Where", "What it is for"],
+    ["", "What", "Where from", "What it is for"],
     ["1", "Supabase token", "supabase.com", "Where your numbers get stored"],
-    ["2", "Meta ad account id + token", "business.facebook.com", "Your ad spend"],
-    ["3", "Vercel token", "vercel.com", "Puts it on the internet"],
+    ["2", "Meta ad account id and token", "business.facebook.com", "Your ad spend"],
+    ["3", "Vercel token", "vercel.com", "Puts your dashboard on the internet"],
     ["4", "Your sales tracker link", "Google Sheets", "Your money"],
-], [0.3 * inch, 1.9 * inch, 1.5 * inch, 2.8 * inch]))
+], [0.3 * inch, 2.0 * inch, 1.55 * inch, 2.65 * inch]))
 
-A(P("1. Supabase — where the numbers live", "h1"))
-A(P("A database is just the filing cabinet the numbers get kept in. Free at the size you need."))
+A(teach("What is a \"token\"?",
+        "A very long password that lets one app talk to another on your behalf. You generate "
+        "it, copy it once, paste it in, and never look at it again. That is the whole idea."))
+
+A(P("1. Supabase — where your numbers get stored", "h1"))
+A(P("A database is just a filing cabinet for numbers. This one is free at the size you need."))
 A(steps([
     "Go to <b>supabase.com</b> and make an account.",
     "Go to <b>supabase.com/dashboard/account/tokens</b>",
-    "Click <b>Generate new token</b>. Name it anything.",
-    "Copy it and give it to Claude.",
+    "Click <b>Generate new token</b>. Name it anything you like.",
+    "Copy it and paste it to Claude.",
 ]))
-A(P("From that one token Claude creates the project and builds everything inside it. You never "
-    "have to click around in Supabase.", "small"))
+A(P("That is your entire involvement with Supabase. Claude builds everything inside it from "
+    "that one token — you never have to click around in there.", "small"))
 
 A(P("2. Meta — your ad spend", "h1"))
-A(P("Your ad account id is in <b>Ads Manager</b>, top left, next to the account name. It "
-    "looks like <font face='Courier'>act_123456789</font>."))
-A(P("Then the access token. Use the kind that never expires — the normal kind dies after "
-    "about two months and takes your dashboard down with no warning."))
+A(P("Two pieces: which ad account, and permission to read it."))
+A(P("Your ad account id", "h2"))
+A(P("Open <b>Ads Manager</b>. It is at the top left, next to the account name. It looks like "
+    "<font face='Courier'>act_123456789</font>. Copy the whole thing, including the "
+    "<font face='Courier'>act_</font> bit."))
+A(P("Your access token", "h2"))
+A(P("There are two kinds, and you want the one that never expires. The ordinary kind dies after "
+    "about two months and takes your dashboard down with no warning, usually on a day you "
+    "actually needed it."))
 A(steps([
-    "Go to <b>business.facebook.com</b> → <b>Business Settings</b>",
-    "Left menu: <b>Users</b> → <b>System Users</b>",
-    "<b>Add</b>. Name it anything. Role: <b>Admin</b>.",
-    "<b>Add Assets</b> → <b>Ad Accounts</b> → tick your ad account → turn on "
+    "Go to <b>business.facebook.com</b>, then <b>Business Settings</b>",
+    "In the left menu find <b>Users</b>, then <b>System Users</b>",
+    "Click <b>Add</b>. Name it anything. Set the role to <b>Admin</b>.",
+    "Click <b>Add Assets</b>, then <b>Ad Accounts</b>, tick your ad account, and turn on "
     "<b>Manage campaigns</b>",
-    "<b>Generate New Token</b>. Pick your app. Tick <b>ads_read</b> and "
-    "<b>ads_management</b>. Expiry: <b>Never</b>.",
-    "Copy it. It is only shown once.",
+    "Click <b>Generate New Token</b>. Pick your app. Tick <b>ads_read</b> and "
+    "<b>ads_management</b>. Set expiry to <b>Never</b>.",
+    "Copy it. Facebook only shows it to you once.",
 ]))
-A(callout("This is the fiddliest part of the whole setup.",
-          "If you get lost, tell Claude which screen you are actually looking at and it will "
-          "walk you through from there. Everything after this is easier."))
+A(callout("This is the fiddliest thing in the whole setup.",
+          "If you get lost, tell Claude the name of the screen you are looking at and it will "
+          "pick up from there. Everything after this is easier."))
 
-A(P("3. Vercel — where the website lives", "h1"))
+A(P("3. Vercel — where your dashboard lives", "h1"))
+A(P("This is what turns it into a real website with a real address, instead of something that "
+    "only works while your laptop is open."))
 A(steps([
     "Go to <b>vercel.com</b> and make an account.",
     "Go to <b>vercel.com/account/tokens</b>",
     "Click <b>Create Token</b>. Name it anything.",
-    "Copy it and give it to Claude.",
+    "Copy it and paste it to Claude.",
 ]))
 
 A(P("4. Your sales tracker", "h1"))
 A(steps([
     "Open your sales tracker in Google Sheets.",
-    "Click <b>Share</b> → under <b>General access</b>, change <b>Restricted</b> to "
-    "<b>Anyone with the link</b>. Leave it on <b>Viewer</b>.",
-    "Copy the link from your browser's address bar and give it to Claude.",
+    "Click <b>Share</b>, top right.",
+    "Under <b>General access</b>, change <b>Restricted</b> to <b>Anyone with the link</b>. "
+    "Leave it set to <b>Viewer</b>.",
+    "Copy the link out of your browser's address bar and paste it to Claude.",
 ]))
-A(P("That is the whole job. Claude reads your column names itself and tells you which "
-    "column it thinks is which — you just confirm it got them right."))
+A(P("That is all you do. Claude reads your column names itself and tells you which column it "
+    "thinks is which. You just check it got them right."))
 
 A(PageBreak())
 
-# ── connecting manychat ──────────────────────────────────────────────────
-A(P("PART THREE", "part"))
-A(P("Connecting ManyChat", "h1"))
-A(P("Two things happen here. The first is a small addition to the keyword automation you "
-    "already have. The second is a new automation you build, which is what gets the keyword "
-    "onto the booked call. Claude gives you the private address to paste in.", "lead"))
+# ═══════════════════════════════════════════════════════════════════════════
+# PART FIVE — ManyChat, starting from nothing
+# ═══════════════════════════════════════════════════════════════════════════
 
-A(P("Where the keyword gets captured", "h2"))
-A(P("In the automation that fires when someone sends one of your keywords, you add two things "
-    "to the Actions block:"))
+A(P("PART FIVE", "part"))
+A(P("ManyChat", "h1"))
+A(P("The longest part, so take your time. It is also the part that makes the whole thing work, "
+    "so it is worth going slowly.", "lead"))
+
+A(P("What you almost certainly have right now", "h2"))
+A(P("One automation. A trigger that fires when someone sends your keyword, and a message that "
+    "goes back to them. Like this:"))
+A(code([
+    "  When someone sends \"TRIM\"    ->    Send them a message",
+]))
+A(P("That is a perfectly good setup and you are not throwing any of it away. You are adding to "
+    "it."))
+
+A(P("What you are adding", "h2"))
 A(bullets([
-    "<b>Set User Field</b> — save the keyword to a custom field, set to "
-    "<b>Last Text Input</b>. This grabs whichever word they actually sent.",
-    "<b>External Request</b> — the step that sends it over. Claude gives you the address and "
-    "exactly what goes in it.",
+    "<b>Part A</b> — two extra steps on the end of the automation you already have, so every "
+    "DM records itself",
+    "<b>Part B</b> — one brand new automation, so booking someone also records which ad they "
+    "came from",
 ]))
-A(callout("One automation covers all your keywords.",
-          "Because the keyword is read from what they typed, you do not need a separate "
-          "automation per word. List every keyword on the same trigger, and each DM records "
-          "itself correctly. If you split conversations between setters with a randomiser, "
-          "that keeps working exactly as it does now &mdash; put the request step after it, "
-          "in the actions."))
 
-A(P("The booking automation you need to build", "h2"))
-A(P("This one is new — you are creating it, not editing something you already have. It is "
-    "what carries the keyword onto the booked call, and without it every booking arrives "
-    "with no idea which ad caused it."))
+A(teach("Before you start, check you are on ManyChat Pro.",
+        "One of the steps below (External Request) is a paid feature. If you cannot find it in "
+        "the menu, that is why — it is not you being blind. Upgrading is the fix."))
+
+A(P("Part A — recording every DM", "h1"))
+A(P("Open the automation that already replies to your keyword. You will see your trigger box, "
+    "and your message box after it."))
+
+A(P("Step 1: save which word they sent", "h2"))
+A(teach("What is a \"custom field\"?",
+        "ManyChat keeps a little card on every person who messages you — their name, when they "
+        "first wrote, and so on. A custom field is a blank box on that card that you get to "
+        "name and fill in yourself. You are about to make one called <b>keyword</b> and put "
+        "the word that person sent you into it. That is all a custom field is."))
 A(steps([
-    "<b>Make a tag</b>, named after the calendar it sends. Something like "
-    "<font face='Courier'>1_Day_Calendar</font>. One tag per calendar you offer.",
-    "<b>Make an automation</b> triggered by <b>Contact event occurs → Tag applied</b>, "
-    "set to that tag.",
-    "Its only step is <b>Send Message</b>, containing your booking link with the keyword "
-    "on the end of it:",
+    "Click the <b>+</b> underneath your message box.",
+    "Choose <b>Action</b>. An empty box appears — think of it as a little to-do list ManyChat "
+    "runs for that person. You have probably never used one of these. That is fine.",
+    "Inside that box click <b>+ Add Action</b>, and pick <b>Set User Field</b>.",
+    "For the field, choose to create a new one, and call it <b>keyword</b>.",
+    "For the value, pick <b>Last Text Input</b> from the list.",
 ]))
-A(code(["your-booking-link?utm_content={keyword}"]))
-A(callout("Make sure the keyword shows up BLUE.",
-          "Insert it using ManyChat's field picker, so it becomes the actual custom field. "
-          "In the editor it appears as a blue chip. If it is plain black text, ManyChat will "
-          "literally send the characters <font face='Courier'>{keyword}</font> to every lead "
-          "and nothing will attribute. Blue means it works."))
-A(P("From then on your setter's entire job is: apply the tag. The calendar link goes out by "
-    "itself, with that person's keyword already inside it."))
-A(P("If you offer more than one calendar, each tag needs its own automation, and every one "
-    "of those links needs the keyword on it.", "small"))
+A(callout("\"Last Text Input\" means: whatever they just typed.",
+          "This is the clever bit. Because you are saving what they actually sent, <b>ONE "
+          "automation handles all of your keywords at once.</b> You do not need one for TRIM "
+          "and another for MIGHTY. Put every keyword on the same trigger and each person "
+          "records themselves correctly."))
 
-A(P("Your booking tool", "h2"))
-A(P("Whatever fires when a call actually gets booked needs to send it over too. GoHighLevel, "
-    "Calendly and most others can do this; the menus differ, so tell Claude which one you use "
-    "and it will give you the exact steps."))
+A(P("Step 2: send it over to your dashboard", "h2"))
+A(P("Stay inside the same action box. Click <b>+ Add Action</b> again and pick "
+    "<b>External Request</b>."))
+A(teach("What is an \"External Request\"?",
+        "It is ManyChat telling another app that something just happened. Like a text message "
+        "from ManyChat to your dashboard saying \"Sarah just sent TRIM\". Nobody sees it, and "
+        "it takes a fraction of a second."))
+A(P("Claude gives you the exact address to paste in, and exactly what to put in each box. "
+    "Follow what it gives you — it is filled in for your account specifically."))
+A(callout("You will see a red \"Invalid JSON\" warning. Ignore it.",
+          "ManyChat shows that while you are editing, because there is no real person for it to "
+          "test with yet. It goes away the moment a genuine DM comes through. It is not an "
+          "error and you have not done anything wrong."))
+A(P("Save it. Part A is done — every DM now records itself."))
 
-A(P("Which calendars are sales calls", "h2"))
-A(P("Claude asks you this during setup, so it is done before you ever open the dashboard. "
-    "You just say which of your calendars are <b>sales calls</b> — not onboarding calls, not "
-    "coaching calls. Those are real bookings, they are just not what you are measuring."))
-A(P("Later, once real bookings are flowing, Claude can list the calendars actually showing "
-    "up in your data and check them against what you said. That catches the classic one: two "
-    "calendars with nearly the same name, quietly splitting your bookings in half.", "small"))
+A(PageBreak())
 
-# ── after ────────────────────────────────────────────────────────────────
-A(P("When it is done", "h1"))
-A(P("You get your own web address, something like <font face='Courier'>your-name.vercel."
-    "app</font>, behind a password you picked. It works on your phone."))
-A(P("It updates itself every hour, whether your computer is on or not. From this point on, "
-    "every new campaign and every new ad set you launch is tracked from the moment it goes "
-    "live — as long as the ad name ends in its keyword."))
+# ── B. the booking automation ────────────────────────────────────────────
+A(P("PART FIVE", "part"))
+A(P("Part B — recording every booked call", "h1"))
+A(P("This is a brand new automation. You have almost certainly never built anything like it, "
+    "and it is the highest-value twenty minutes in this guide.", "lead"))
 
-A(P("Check these four before you call it finished", "h2"))
+A(P("What you do today", "h2"))
+A(P("When your setter is ready to book someone, they paste your calendar link into the chat by "
+    "hand."))
+A(P("That link tells you nothing. Someone books through it and it arrives with no idea who they "
+    "are or which ad they came from. That is exactly why bookings are impossible to attribute "
+    "at the moment."))
+
+A(P("What you are replacing it with", "h2"))
+A(P("Your setter puts a <b>tag</b> on the person instead. ManyChat spots the tag, sends the "
+    "calendar link automatically, and slips that person's keyword inside the link on the way "
+    "out."))
+A(P("Same effort for the setter. Less, actually — one click instead of hunting for a link and "
+    "pasting it."))
+
+A(teach("What is a \"tag\"?",
+        "A sticker you put on a person in ManyChat. That is genuinely all it is. You make up "
+        "the name. The useful part is that ManyChat can watch for a sticker being applied and "
+        "do something the moment it happens."))
+
+A(P("Build it", "h2"))
+A(steps([
+    "In ManyChat go to <b>Settings</b>, then <b>Tags</b>, and make a new tag. Name it after "
+    "the calendar it will send — something like <font face='Courier'>1_Day_Calendar</font>. "
+    "If you offer more than one calendar, make one tag for each.",
+    "Go to <b>Automation</b> and start a <b>New Automation</b>.",
+    "For the trigger, choose <b>Contact event occurs</b>, then <b>Tag applied</b>, then pick "
+    "the tag you just made.",
+    "Add one step: <b>Send Message</b>.",
+    "In that message, put your normal booking link — then add the keyword onto the end of it, "
+    "exactly as described below.",
+]))
+
+A(P("Adding the keyword to the link", "h2"))
+A(teach("What you are about to do, in plain terms.",
+        "You are sticking a little label on the end of your booking link. When Sarah clicks it, "
+        "the label travels along with her and lands in your booking tool, so it knows she came "
+        "from TRIM. She never sees it and it changes nothing for her."))
+A(P("Take your booking link and add this onto the end:"))
+A(code(["?utm_content=", "", "...then insert your keyword field straight after the = sign"]))
+A(P("So a finished link looks like this — where the last part is your keyword <i>field</i>, not "
+    "typed-out text:"))
+A(code(["https://your-booking-link.com/strategy-call?utm_content={keyword}"]))
+A(P("To insert the field: while you are writing the message, use ManyChat's field picker — the "
+    "little <font face='Courier'>{ }</font> button — and choose your <b>keyword</b> field. Do "
+    "not type the word out with brackets around it yourself."))
+
+A(callout("THE MOST IMPORTANT CHECK IN THIS WHOLE GUIDE: it has to be BLUE.",
+          "When you insert the field properly, ManyChat shows it as a <b>blue chip</b> in the "
+          "message. If it is plain black text, ManyChat will send the literal characters "
+          "<font face='Courier'>{keyword}</font> to every single lead, and not one booking will "
+          "ever be attributed. So look at it. Is it blue? Good. If it is black, delete it and "
+          "insert it again using the field picker."))
+
+A(P("If you offer more than one calendar — a one-day and a three-day, say — each tag needs its "
+    "own automation, and every one of those links needs the keyword on it."))
+
+A(P("Tell your setter what changed", "h2"))
+A(P("From now on, their whole job when booking someone is: <b>apply the tag</b>. The link goes "
+    "out by itself with the keyword already inside it."))
+A(P("Say this to them out loud. If they keep pasting the old link by hand out of habit, those "
+    "bookings arrive with nothing attached and can never be traced."))
+
+A(P("Last piece: your booking tool", "h1"))
+A(P("Whatever you book calls with — GoHighLevel, Calendly, anything — needs to tell the "
+    "dashboard when a call actually gets booked."))
+A(P("The menus are named differently in every tool, so tell Claude which one you use and it "
+    "will give you the exact steps for yours."))
+
+A(P("Which calendars count as sales calls", "h2"))
+A(P("Claude asks you this during setup, before you ever open the dashboard. You just say which "
+    "of your calendars are <b>sales calls</b> — not onboarding calls, not coaching calls. Those "
+    "are real bookings, they are just not the thing you are measuring here."))
+
+A(PageBreak())
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PART SIX — done
+# ═══════════════════════════════════════════════════════════════════════════
+
+A(P("PART SIX", "part"))
+A(P("You are done. What now?", "h1"))
+A(P("You have your own web address, something like <font face='Courier'>your-name.vercel."
+    "app</font>, behind a password you picked. It works on your phone — put it on your home "
+    "screen."))
+A(P("It updates itself every hour, whether your laptop is on or not."))
+
+A(P("Check these four before you trust it", "h2"))
 A(table([
-    ["", "Check"],
-    ["&#9744;", "Your ad spend is showing"],
-    ["&#9744;", "Send yourself a test DM with one of your keywords — it lands in the DM column"],
-    ["&#9744;", "Book a test call — it lands in the booked column"],
-    ["&#9744;", "Ask Claude to run the setup check, and it comes back clean"],
-], [0.3 * inch, 6.2 * inch]))
-A(P("If any is zero, tell Claude. A setup that finished but shows an empty table is not "
-    "finished, and you will not notice for a week."))
+    ["", "Check", "If it comes back empty"],
+    ["&#9744;", "Your ad spend is showing", "Tell Claude — usually the Meta token"],
+    ["&#9744;", "Send yourself a test DM with one of your keywords. It shows up in the DM column",
+     "The ManyChat action did not save"],
+    ["&#9744;", "Put your booking tag on yourself. You get the link, and it has the keyword on "
+     "the end of it", "The keyword is black, not blue"],
+    ["&#9744;", "Ask Claude to run the setup check. It comes back clean", "It will tell you what to fix"],
+], [0.3 * inch, 3.4 * inch, 2.8 * inch]))
+A(P("Do not skip these. A setup that finished but shows an empty table is not finished, and you "
+    "will not notice for a week."))
 
-A(P("If something looks off later", "h1"))
-A(P("Tell Claude what you are seeing in your own words. There is a check built in that finds "
+A(P("Give it two weeks before you judge an ad", "h2"))
+A(P("The dashboard is instant. Your sales cycle is not. Someone who DMs you today might buy in "
+    "ten days. A brand new ad showing zero sales on day two is not a bad ad, it is an ad you "
+    "have not waited for yet."))
+A(P("Cost per DM and cost per booked call tell you something within a couple of days. ROAS "
+    "needs longer."))
+
+A(P("When something looks off", "h1"))
+A(P("Tell Claude what you are seeing, in normal words. There is a check built in that catches "
     "most of it. The usual suspects:"))
 A(table([
-    ["What you see", "What it usually is"],
-    ["One ad shows spend and nothing else", "Its name does not end in its keyword"],
-    ["Spend, but no DMs at all", "The ManyChat request step is not firing"],
-    ["DMs, but no booked calls", "Your sales calendars have not been marked yet"],
-    ["Booked calls look too low", "Two calendars with nearly the same name, splitting your bookings"],
-    ["Bookings show, but no keyword", "The booking link is missing <font face='Courier'>utm_content</font>"],
-    ["Sales show as unattributed", "No ManyChat link on those rows in your tracker"],
-], [2.5 * inch, 4.0 * inch]))
+    ["What you see", "What it almost always is"],
+    ["One ad shows spend and zeros everywhere else", "Its name does not end in its keyword"],
+    ["No DMs at all", "The ManyChat action did not save, or you are not on Pro"],
+    ["Bookings arriving with no keyword on them", "The keyword in the booking link is black, not blue"],
+    ["No booked calls at all", "Your sales calendars were never marked"],
+    ["Booked calls look too low", "Two calendars with nearly the same name, splitting them"],
+    ["Sales showing as unattributed", "No ManyChat link pasted on those rows"],
+    ["Everything froze on a certain date", "Your Meta token expired. Make a System User one"],
+], [2.6 * inch, 3.9 * inch]))
 
 A(Spacer(1, 14))
 A(rule())
 A(Spacer(1, 10))
-A(P("<b>The whole thing in one line:</b> the keyword goes at the end of the ad name, rides "
-    "the booking link, and lands on the sales row. Claude does the rest.", "small"))
+A(P("<b>The whole thing in one sentence:</b> the keyword goes at the end of the ad name, gets "
+    "saved when they DM you, rides along inside the booking link, and lands on the sales row. "
+    "Four handoffs. Claude builds three of them.", "small"))
 
 doc = BaseDocTemplate(
     os.path.abspath(OUT), pagesize=LETTER,
