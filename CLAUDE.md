@@ -41,9 +41,11 @@ they can and say "not sure" to the rest — you will work the rest out.
 4. **What do you use for your Instagram DMs?** (Expect ManyChat. If something
    else, ask whether it can send a webhook — most can.)
 5. **What do you use to book calls?** (GoHighLevel, Calendly, something else)
-6. **Do you keep a spreadsheet of your sales calls?** If yes, ask them to **paste
-   the header row** — the very top row of the sheet, with the column names. This
-   is the single most useful thing they can give you.
+6. **Paste the top row of your sales tracker** — the row with the column names in
+   it. Assume they have one; every coach doing this does. This is the single most
+   useful thing they can give you, because it is how you map their columns.
+   Also ask: **is there a column where the ManyChat link gets pasted?** If not,
+   they need to add one before you finish (see Phase 4).
 7. **Does anyone else set appointments for you, or is it just you?**
 8. **What are your ads called right now in Ads Manager?** Ask for two or three
    real examples. You need this for Phase 2.
@@ -68,19 +70,25 @@ built on a wrong picture will produce numbers that look fine and are wrong.
 These are not optional and they are not technical. If they do not do these, the
 dashboard will be blank and they will think it is broken.
 
-### Rule 1 — the keyword goes at the END of the ad's name
+### Rule 1 — name the ad after the keyword
 
-Their ad already tells people to send a word. That word has to also be the last
-word of the ad's name in Ads Manager.
+Simplest version, and the one to lead with: **the ad's name is the keyword.**
 
 ```
-Ad tells people to DM:  TRIM
-Ad must be named:       anything you like | TRIM
+Ad says "DM me TRIM"   ->   name the ad:   TRIM
 ```
 
-Look at the real ad names they gave you in question 8, and **rewrite them into
-correct ones, in the chat, with their actual keywords.** Do not explain it in the
-abstract. Show them their own ads, fixed.
+Extra text in the name is allowed, but then the keyword must be the **last word**.
+The parser takes the last word of the name, so `Lead Magnet | TRIM` gives `trim`
+while `TRIM retarget` gives `retarget` and that ad is never credited with anything.
+
+Do not invent a naming convention for them. Do not suggest things like
+`Retarget | v3 | TEMPO` — that is not how these are named and it adds a rule
+nobody asked for. Plain keyword, unless they already do something else.
+
+Look at the real ad names they gave you in question 8. If any of them would parse
+wrong, **show them that ad, renamed, in the chat.** Do not explain it in the
+abstract.
 
 Tell them plainly what happens if they do not: the money still shows up, but that
 ad can never be credited with a single DM, call, or sale. It sits at the top of
@@ -93,17 +101,23 @@ one produced the sale.
 
 Reusing a word later is fine — leave a few weeks after you turn the first one off.
 
-### If they have a sales tracker, there is a third rule
+### Rule 3 — the sales tracker columns have to actually get filled in
 
-Whoever takes the call has to fill in the "did they show up" column and the "how
-much did they pay" column. The dashboard reads those. Nobody filling them in means
-no show rate and no revenue, and there is nothing the software can do about it.
+Whoever takes the call fills in **did they show up** and **what did they pay**. The
+dashboard reads those two columns directly. Nothing can automate it, and empty
+columns mean no show rate and no revenue.
+
+This is not a "nice to have" conversation. Their sales tracker is where ROAS comes
+from — without it connected they have a funnel counter, not an attribution system.
 
 ---
 
 ## PHASE 3 — Build it
 
-Now do the work. In this order.
+They may have started this by pasting the repo link at you rather than opening a
+folder. Either is fine — clone it somewhere sensible and work from there.
+
+Now do the work, in this order.
 
 ```
 npm install
@@ -120,10 +134,10 @@ Edit `adsv2.config.json`:
 - `business.name` — from question 1
 - `business.timezone` — from question 3
 - `business.currency` — whatever Meta charges them in
-- `salesSheet` — set `enabled: true` if they have a sheet, and **map `columns` from
-  the header row they pasted in question 6.** Column letters, counting from A. Only
-  `date` and `prospectName` are required. Map `manychatLink` if any column holds a
-  ManyChat link — it is worth more than all the others combined.
+- `salesSheet` — set `enabled: true` and **map `columns` from the header row they
+  pasted in question 6.** Column letters, counting from A. `date` and
+  `prospectName` are required. Map `manychatLink` to whichever column holds the
+  ManyChat link — it is worth more than all the other optional columns combined.
 - Leave `salesCalendarIds` empty. You fill it in at Phase 5.
 
 If their sheet has one tab per month, set `tabs: "monthly"` and match
@@ -136,7 +150,7 @@ Ask for these in one message, with the exact link for each:
 | What | Where | Why it matters |
 | --- | --- | --- |
 | Supabase access token | supabase.com/dashboard/account/tokens → Generate new token | This is where their numbers get stored |
-| Meta ad account id + access token | See `docs/SETUP.md` §Meta | Without it there is no ad spend at all |
+| Meta ad account id + access token | A **System User** token, so it never expires. The setup guide PDF has the click path | Without it there is no ad spend at all |
 | Vercel token | vercel.com/account/tokens → Create Token | This is what puts it on the internet |
 | Their sales sheet link | Share → anyone with the link → Viewer, then copy the address | This is where money comes from |
 
@@ -152,23 +166,73 @@ npm run doctor    # tells you both what is left
 
 ## PHASE 4 — Connect ManyChat and their booking tool
 
-`npm run deploy` prints their two webhook addresses with the secret already in
-them. Give them the finished addresses — never a template with `YOUR-APP` in it
-that they have to fill in themselves.
+`npm run deploy` prints their two webhook addresses with the secret already in them.
+**Give them the finished addresses.** Never a template with `YOUR-APP` in it that they
+have to complete themselves.
 
-**ManyChat.** In the automation that already fires when someone sends the keyword,
-they add a step: **External Request**. Method POST. Paste the address. Body JSON:
+### ManyChat — where the keyword gets caught
+
+This is a real, working shape, not a suggestion. Match it.
+
+Their keyword automation already exists. Its trigger is **User sends a message**,
+with *every* keyword listed on it — `mighty, charged, loaded, summit, hammer` and so
+on, all on one trigger. If they split conversations between setters, a **Randomizer**
+sits after the trigger and each branch leads into an Actions block.
+
+In that Actions block, two things get added:
+
+1. **Set User Field** → a custom field called `keyword`, set to **Last Text Input**.
+   That captures whichever word the person actually typed.
+2. **External Request** → the step that sends it over.
+
+**One automation covers every keyword.** Because the word is read from what they
+typed, they do NOT need one automation per keyword. If you tell them to build five
+automations for five keywords you have made their life materially worse for no
+reason.
+
+The External Request itself:
+
+- **Request Type:** POST
+- **Request URL:** the manychat address from `npm run deploy`
+- **Headers:** `Content-Type: application/json`, and `X-Webhook-Secret` set to their
+  `WEBHOOK_SECRET`. Prefer the header over putting the secret in the URL — it keeps
+  the secret out of anything that logs URLs.
+- **Body:** JSON, using ManyChat's own field pickers
 
 ```json
-{ "keyword": "TRIM", "subscriber_id": "{{subscriber_id}}", "name": "{{first_name}}" }
+{
+  "subscriber_id": "<Contact Id>",
+  "first_name": "<First Name>",
+  "last_name": "<Last Name>",
+  "keyword": "<keyword custom field>",
+  "setter_name": "<the setter for this branch>"
+}
 ```
 
-They need one per keyword, with that keyword's word in it. If they have five live
-keywords, that is five automations, each already existing — they are adding one
-step to each.
+`subscriber_id` and `keyword` are the two that matter. The rest is nice to have.
 
-**Their booking tool.** On whatever fires when a call gets booked, POST to the
-booking address. What to send:
+Note that ManyChat's Preview pane shows **"Invalid JSON — Variables are not defined"**
+while you are editing. That is normal; it cannot resolve the merge fields until a real
+contact runs through. It is not an error, and they will ask about it.
+
+### ManyChat — where the keyword rides to the booking
+
+This is the step people miss, and without it every booking arrives orphaned.
+
+When the setter is ready to book someone, they apply a booking tag (`1_Day_Calendar`,
+`3_Day_Calendar`, whatever they use). That tag triggers an automation that sends the
+calendar link. **That link must carry the keyword:**
+
+```
+https://their-booking-link?utm_content={keyword}
+```
+
+— pulling from the same `keyword` custom field set at the top of the funnel. Every
+booking tag they use needs it, not just the first one.
+
+### Their booking tool
+
+Whatever fires when a call is actually booked POSTs to the booking address. Fields:
 
 ```json
 {
@@ -177,18 +241,23 @@ booking address. What to send:
 }
 ```
 
-Use their tool's own merge-field syntax — GoHighLevel and Calendly both differ.
-If you do not know it, say so and look it up rather than inventing field names.
+Use their tool's own merge-field syntax — GoHighLevel and Calendly differ. If you do
+not know it, look it up rather than inventing field names.
 
-**`manychat_user_id` is the one that matters.** It ties the booked call back to the
-DM, and therefore back to the ad. Without it, most bookings will show as
-unattributed. If their booking tool cannot carry it, tell them plainly that
-attribution will be weaker and why, rather than letting them find out later.
+The keyword arrives two ways: from `utm_content` on the booking link, and from
+`manychat_user_id` if their tool can carry it. Either works. Both is better.
 
-**To check either one is live**, open the address in a browser. It answers with
+### The sales tracker habit
+
+When the setter books someone, they paste that person's **ManyChat conversation link**
+onto the row in the sales tracker. That is what ties the eventual sale back to the DM.
+
+Check they actually have that column. If they do not, tell them to add it now, before
+setup finishes — retrofitting it later means the sales already in the sheet can never
+be attributed.
+
+**To check either endpoint is live**, open its address in a browser. It answers with
 whether the secret is right and what it expects.
-
----
 
 ## PHASE 5 — Pin the sales calendars
 

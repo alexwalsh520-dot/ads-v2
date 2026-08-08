@@ -1,100 +1,109 @@
-# Ads
+# DM Ads Attribution
 
-**One table that shows you what every ad actually gave back.**
+**Real ROAS for DM funnels, per ad, updating on its own.**
 
 Money spent → DMs → booked calls → calls that happened → sales → cash. For any date
-range. Per ad.
-
-Facebook can tell you what you spent. It cannot tell you what came back. This does.
+range. Per ad, not per campaign.
 
 ---
 
-## Who this is for
+## Why this exists
 
-You run Meta ads that tell people to send a word in the DMs. They message you, they
-book a call, some of them buy. Right now you cannot tell which ad produced the
-people who bought — so you're guessing which ones to turn off.
+If you ran a normal funnel, Ads Manager would show you the conversion. Someone clicks,
+hits a landing page, the pixel fires, and Facebook tells you which ad made the sale.
 
-This stops the guessing.
+**DM ads don't work like that.** The conversation happens inside Instagram. Facebook
+never sees the booking, never sees the call, never sees the money. So the column you
+actually care about — which ad produced buyers — doesn't exist in Ads Manager, and
+never will.
+
+And the one number it does give you is wrong. Facebook's cost per DM counts
+conversations far more generously than you would, so it's inflated, and you're making
+budget decisions on it.
+
+Which leaves most people running DM ads with a spreadsheet rebuilt every campaign,
+setters logging things by hand and forgetting some, and a monthly total that's roughly
+right with no idea which ad produced it.
+
+This is the attribution system I built for my own DM ads. It sets itself up on your
+accounts, in your business.
+
+---
+
+## What changes
+
+Once it's running, every campaign and ad set you launch from then on is tracked
+automatically. Nobody logs anything. You're not chasing setters for numbers.
+
+You open one page and the real cost per DM, cost per booked call, show rate and ROAS
+are already there, updated within the hour.
+
+Instead of *"we spent $4,000 and made $11,000"*, you get one row per ad telling you
+that **this** one costs $9 a DM and has made three sales, and **that** one has spent
+$600 and produced nothing.
 
 ---
 
 ## Setting it up
 
-**Open this folder in [Claude Code](https://claude.com/claude-code) and say "install this."**
+**Paste this repo's link into a [Claude Code](https://claude.com/claude-code) session
+and tell it to install this.**
 
-It asks you a few questions about your business, then does the rest. You'll need to
-copy three tokens from three websites, paste two links into ManyChat and your
-booking tool, and pick a password. That's your whole job.
+It'll ask about your business — what you use for DMs, what you book calls with, what
+your sales tracker columns are called — and build the whole thing around your answers.
+You don't edit any files.
+
+You'll need to grab three tokens from three websites, add a couple of steps in
+ManyChat, and share your sales sheet. That's your side of it.
 
 About 45 minutes, most of it waiting for accounts to create.
 
-**[The full setup guide is here →](docs/Ads-Setup-Guide.pdf)** — written for
-someone who has never opened a terminal.
-
-Doing it yourself instead:
-
-```bash
-npm install
-npm run setup     # makes your settings file and your password
-npm run db        # creates your database
-npm run deploy    # puts it on the internet
-npm run doctor    # tells you what's still missing
-```
-
-`npm run doctor` is the one to remember. Run it whenever something looks wrong. It
-checks everything and every problem it finds comes with what to do about it.
-
----
-
-## Where does it live?
-
-On the internet, at your own address — something like `your-name.vercel.app`. You
-sign in with a password. It works on your phone.
-
-It updates itself every hour, whether your computer is on or not.
-
-You can also run it on your own computer while you're setting up (`npm run dev`),
-but that only works while your computer is on and that window is open, and the
-hourly update doesn't happen. That's for testing. Deploying is the real thing.
-
-Hosting is free at the size you need. So is the database.
+**[Full setup guide (PDF) →](docs/DM-Ads-Attribution-Guide.pdf)**
 
 ---
 
 ## The two rules that make it work
 
-**1. The keyword goes at the end of the ad's name.**
-
-Your ad tells people to DM a word. That same word has to be the last word of the
-ad's name in Ads Manager.
+**1. Name the ad after the keyword.**
 
 ```
-Ad says "DM me TRIM"   →   name the ad:   Vet ICP | Direct CTA | TRIM
+Ad says "DM me TRIM"   →   name the ad:   TRIM
 ```
 
-That word is the entire connection between money going out and DMs coming in. An ad
-named without it still shows its spend — it just sits there with zeros next to it
-forever, because nothing can tie it to anything.
+Extra text is allowed, but then the keyword has to be the **last word** —
+`Lead Magnet | TRIM` works, `TRIM retarget` does not.
 
-**2. Never run two ads with the same keyword at the same time.**
+That word is the whole connection between money going out and DMs coming in. An ad
+named wrong still shows its spend and sits there with zeros beside it forever.
 
-One live ad, one word. If two ads both say DM me TRIM, nothing on earth can tell you
-which one produced the sale.
+**2. Never run two ads with the same keyword at once.**
 
-Using a word again later is fine. Just wait a few weeks after turning the first one
-off, so a straggler DM doesn't get credited to the wrong ad.
+One live ad, one word. If two ads both say DM me TRIM, nothing can tell you which one
+produced the sale. Reusing a word later is fine — just leave a few weeks.
+
+---
+
+## How the keyword travels
+
+| Where | What carries it |
+| --- | --- |
+| The ad | the ad's **name** in Ads Manager |
+| The DM | what they typed, caught by ManyChat into a `keyword` field |
+| The booking | `utm_content` on the booking link your setter sends |
+| The sale | the ManyChat link pasted on the row in your sales tracker |
+
+Four links. Break one and that person's journey goes dark from there — not wrong, just
+unknown, which the dashboard shows you honestly.
 
 ---
 
 ## What it won't do
 
 **It won't guess.** If it can't prove a sale came from a particular ad, it shows as
-*unattributed* instead of being quietly assigned to whichever ad looks likeliest.
+*unattributed* rather than being assigned to whichever ad looks likeliest.
 
-That's on purpose. Unattributed money you can see is a problem you can go and fix.
-Money silently credited to the wrong ad is a decision you'll get wrong and never
-find out about.
+Money you can see is unaccounted for is a problem you can fix. Money silently credited
+to the wrong ad is a decision you'll get wrong and never find out about.
 
 Hover any number to see what it was built from.
 
@@ -105,14 +114,15 @@ Hover any number to see what it was built from.
 | | |
 | --- | --- |
 | A Meta ad account | the spend |
-| ManyChat, or anything that can send a webhook | the DMs |
+| ManyChat | the DMs |
 | A booking tool — GoHighLevel, Calendly, whatever | the calls |
-| A Google Sheet of your sales calls | the money. Optional, but no ROAS without it |
+| Your sales tracker in Google Sheets | the money |
 | A free Supabase account | where the numbers get stored |
 | A free Vercel account | where the website lives |
 
-Without the sales sheet you still get spend, DMs, booked calls and show rate. You
-don't get revenue, and you don't get ROAS.
+Your dashboard ends up at your own address, something like `your-name.vercel.app`,
+behind a password. Works on your phone. Updates itself hourly whether your computer is
+on or not.
 
 ---
 
@@ -130,7 +140,7 @@ don't get revenue, and you don't get ROAS.
 
 ## Docs
 
-- **[Setup guide (PDF)](docs/Ads-Setup-Guide.pdf)** — what this is, and every step, for a human
+- **[Setup guide (PDF)](docs/DM-Ads-Attribution-Guide.pdf)** — why this exists, and every step, for a human
 - **[DATA-RULES.md](docs/DATA-RULES.md)** — what every number means and when it's allowed to change
 - **[CLAUDE.md](CLAUDE.md)** — how an AI assistant should install and look after this
 

@@ -43,6 +43,19 @@ function pick(payload: Payload, names: string[]): string | null {
   return null;
 }
 
+/**
+ * A usable name for this person. ManyChat sends first and last as separate
+ * fields, so joining them gives "Sarah Bell" rather than eight Sarahs in the
+ * table with no way to tell them apart.
+ */
+function personName(payload: Payload): string | null {
+  const whole = pick(payload, ["name", "full_name", "subscriber_name"]);
+  if (whole) return whole;
+  const first = pick(payload, ["first_name", "firstName"]);
+  const last = pick(payload, ["last_name", "lastName"]);
+  return [first, last].filter(Boolean).join(" ") || null;
+}
+
 function authorized(req: NextRequest): boolean {
   const secret = process.env.WEBHOOK_SECRET;
   // No secret configured means the endpoint is closed, not open. An unguarded
@@ -114,7 +127,7 @@ export async function POST(req: NextRequest) {
       keyword_raw: keywordRaw ? displayKeyword(keywordRaw) : null,
       keyword_normalized: keyword,
       subscriber_id: subscriberId,
-      subscriber_name: pick(payload, ["name", "full_name", "first_name", "subscriber_name"]),
+      subscriber_name: personName(payload),
       setter_name: pick(payload, ["setter", "setter_name", "assigned_to", "owner"]),
       event_at: at.toISOString(),
       raw_payload: payload,
