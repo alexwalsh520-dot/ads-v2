@@ -102,7 +102,10 @@ reschedules twice is one booked call, not three.
 night for a Friday slot counts under Thursday. The scheduled time still drives
 whether a call is upcoming, and the Call column in the popup.
 
-**Calls taken** counts what actually happened, from the sales tracker.
+**Calls taken** comes from the sales tracker's call-taken column, ticked by a human.
+Nothing detects attendance. The booking tool only knows a booking exists; whether
+somebody turned up is read straight out of the sheet. Same for revenue. An unfilled
+tracker produces blank show rate and blank revenue, never a guess.
 
 **Show rate** is taken ÷ due, per person, and a call still in the future is **not**
 counted as due. A booking scheduled for next week is not a no-show, and letting it

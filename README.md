@@ -97,6 +97,11 @@ Think of it like a promo code. One code per ad, and it rides all the way to the 
 Four links. Break one and that person's journey goes dark from there — not wrong, just
 unknown, which the dashboard shows you honestly.
 
+**Show rate and revenue come from your sales tracker**, ticked and typed by whoever
+takes the call. Nothing detects attendance. That is the point rather than a
+limitation: the admin your team already does after every call is what powers the
+dashboard, so it costs you no extra work.
+
 ---
 
 ## What it won't do

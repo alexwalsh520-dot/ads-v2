@@ -328,35 +328,53 @@ A(P("<b>4. Your setter books her.</b> Instead of pasting the calendar link by ha
     "through it) that watches for that sticker and sends the calendar link the moment it "
     "appears. And the link it sends has STRONG tucked inside it, where Sarah never sees it. "
     "That is one booked call on the STRONG row."))
-A(P("<b>5. Your setter pastes her ManyChat link into your sales sheet</b> — right there, at the "
-    "moment they book her. Three seconds. This is what lets the sale find its way back to her "
-    "later."))
-A(P("<b>6. She turns up, and she buys.</b> You fill in your sales sheet like you always do. "
-    "Because her ManyChat link is already on that row, the system knows this sale is Sarah — "
-    "and Sarah was STRONG."))
+A(P("<b>5. Your setter pastes her ManyChat link into your sales sheet</b>, right there, at the "
+    "moment they book her. Three seconds, while they are still looking at the conversation. "
+    "This is the one genuinely new habit in the whole system."))
+A(P("<b>6. She turns up, and she buys.</b> Your closer fills in the sheet exactly as they do "
+    "today: ticks that she showed, writes what she paid. Nothing new for them at all."))
+A(P("<b>7. That is what the dashboard reads.</b> Because Sarah's ManyChat link is sitting on "
+    "that row, the system knows this row is Sarah, and it already knew Sarah was STRONG."))
 A(P("<b>Done.</b> $2,000 lands on the STRONG row. You now know, for a fact, that ad produced a "
     "paying client."))
 
 A(callout("That is the entire system.",
-          "Five handoffs, and the keyword survives every one of them. Everything in the setup "
+          "The keyword survives every step. Everything in the setup "
           "exists to make one of those handoffs happen without anybody having to think about "
           "it."))
 
 A(PageBreak())
 
 A(P("PART TWO", "part"))
-A(P("Which handoffs are your job", "h1"))
-A(P("Three of the five happen on their own once you are set up. Two are yours, forever."))
+A(P("You are not adding a new job", "h1"))
+A(P("This is worth being straight about, because it is the thing that makes or breaks whether "
+    "this actually works for you.", "lead"))
+A(P("Nothing here detects who showed up to a call. No software can. It knows because "
+    "<b>somebody ticked a box in your sales tracker</b> — the same box your closer already "
+    "ticks after every call."))
+A(P("That is the whole trick. You are not building a new process on top of your business. You "
+    "are turning the admin your team already does into an attribution system.", "lead"))
+
+A(P("Who does what", "h2"))
 A(table([
     ["The handoff", "Who does it"],
-    ["Ad → keyword", "<b>You.</b> By naming the ad after the keyword"],
+    ["Ad → keyword", "<b>You</b>, when you name the ad"],
     ["Keyword → DM", "Automatic, once ManyChat is set up"],
     ["DM → booked call", "Automatic, from the tag your setter applies"],
-    ["Booked call → showed up", "Automatic, from your booking tool"],
-    ["The person → the sale", "<b>You.</b> By pasting the ManyChat link on the row when you book"],
-], [2.3 * inch, 4.2 * inch]))
-A(P("Both of yours take about three seconds each, and they are the whole difference between "
-    "real numbers and blank ones. They get a section of their own next."))
+    ["Booked call → the person", "<b>Whoever books it</b>, pasting the ManyChat link on the row"],
+    ["Did they show up", "<b>Your closer</b>, ticking the column they already tick"],
+    ["Did they buy, and for how much", "<b>Your closer</b>, filling the columns they already fill"],
+], [2.4 * inch, 4.1 * inch]))
+
+A(P("Look at that list again. Four of the six are either automatic or something your team is "
+    "already doing today. The only genuinely new habit is pasting the ManyChat link when you "
+    "book someone, and that is three seconds while you are already looking at the "
+    "conversation."))
+A(callout("Which also means the reverse is true.",
+          "If your tracker stops getting filled in, your show rate and your revenue go blank. "
+          "Not wrong, blank. The system will not invent them. So the discipline your team "
+          "already has around the tracker is now doing double duty: it runs your sales "
+          "process AND it powers every number on the dashboard."))
 
 A(P("What happens when a handoff breaks", "h1"))
 A(P("Nothing dramatic. The chain stops there for that one person, and the system tells you "
@@ -460,10 +478,15 @@ A(callout("Add this column today, before you set anything else up.",
           "Rows already in your sheet without it can never be matched afterwards. Every day you "
           "wait is another day of sales that can never be traced back to an ad."))
 
-A(P("And two columns someone has to keep filling in", "h2"))
-A(P("Whoever takes the call fills in whether they showed up and what they paid. That has always "
-    "been a human job and it stays one. Empty columns mean no show rate and no revenue — not "
-    "broken, just nothing there to read."))
+A(P("The two columns your closer already fills in", "h2"))
+A(P("Whether they showed up, and what they paid."))
+A(P("Nothing detects these. Nothing can. Your show rate comes from that tick box, and your "
+    "revenue and ROAS come from that number. The dashboard is reading your team's admin, which "
+    "is exactly why it costs you no extra work."))
+A(P("It also means the discipline you already have around the tracker now does two jobs. It "
+    "runs your sales process, and it powers every number on the dashboard. If the tracker goes "
+    "unfilled for a week, your show rate and revenue go blank for that week. Blank, not wrong "
+    "— the system will not invent them."))
 
 A(PageBreak())
 
@@ -822,8 +845,8 @@ A(P("<b>Stuck on anything?</b> Ask your Claude first — it has the full setup i
     "it knows this system inside out. If you are still stuck after that, come and ask me. More "
     "than happy to help you get it working."))
 A(P("<b>And the whole thing in one sentence:</b> the keyword goes at the end of the ad name, "
-    "gets saved when they DM you, rides along inside the booking link, and lands on the sales "
-    "row. Four handoffs. Claude builds three of them.", "small"))
+    "gets saved when they DM you, rides inside the booking link, and lands on the sales row "
+    "your team already fills in.", "small"))
 
 doc = BaseDocTemplate(
     os.path.abspath(OUT), pagesize=LETTER,

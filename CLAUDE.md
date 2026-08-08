@@ -112,12 +112,22 @@ Reusing a word later is fine — leave a few weeks after you turn the first one 
 
 ### Rule 3 — the sales tracker columns have to actually get filled in
 
-Whoever takes the call fills in **did they show up** and **what did they pay**. The
-dashboard reads those two columns directly. Nothing can automate it, and empty
-columns mean no show rate and no revenue.
+**Nothing in this system detects who showed up to a call.** Say that plainly. It is a
+common and reasonable assumption that the booking tool knows, and it does not — the
+booking tool only knows a booking exists.
 
-This is not a "nice to have" conversation. Their sales tracker is where ROAS comes
-from — without it connected they have a funnel counter, not an attribution system.
+Show rate comes from the **call taken** column in their sales tracker, ticked by a
+human. Revenue and ROAS come from the **cash collected** column, typed by a human.
+Both are read straight out of the sheet.
+
+**Frame this as the good news, because it is.** They are not being asked to adopt a
+new process. The admin their closer already does after every call is what powers the
+whole dashboard. That is the entire trick: it turns work that was already happening
+into attribution.
+
+The corollary is worth saying too: if the tracker stops getting filled in, show rate
+and revenue go blank for that period. Blank, not wrong. The system will not invent
+them.
 
 ---
 
