@@ -35,11 +35,15 @@ const args = Object.fromEntries(
 const token = args.token || getEnv("SUPABASE_ACCESS_TOKEN");
 if (!token) {
   console.error(`
-${c.bold("A Supabase access token is needed.")}
+${c.bold("A Supabase personal access token is needed.")}
+
+  This is an ACCOUNT-level token. It is NOT the anon key, the service role key,
+  or anything you find inside a project's settings. Those are different things
+  and none of them will work here.
 
   1. Go to  https://supabase.com/dashboard/account/tokens
   2. Click  Generate new token,  name it anything
-  3. Copy it
+  3. Copy it. It starts with  sbp_  — that prefix means you got the right one.
   4. Add this line to .env.local:
 
        SUPABASE_ACCESS_TOKEN=sbp_your_token_here

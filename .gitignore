@@ -12,3 +12,6 @@ build/
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# Superseded guide revisions. Only the current one is tracked.
+docs/DM-Ads-Attribution-Guide-v[0-3].pdf

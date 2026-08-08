@@ -84,12 +84,12 @@ dashboard will be blank and they will think it is broken.
 Simplest version, and the one to lead with: **the ad's name is the keyword.**
 
 ```
-Ad says "DM me TRIM"   ->   name the ad:   TRIM
+Ad says "DM me STRONG"   ->   name the ad:   STRONG
 ```
 
 Extra text in the name is allowed, but then the keyword must be the **last word**.
-The parser takes the last word of the name, so `Lead Magnet | TRIM` gives `trim`
-while `TRIM retarget` gives `retarget` and that ad is never credited with anything.
+The parser takes the last word of the name, so `Lead Magnet | STRONG` gives `strong`
+while `STRONG retarget` gives `retarget` and that ad is never credited with anything.
 
 Do not invent a naming convention for them. Do not suggest things like
 `Retarget | v3 | TEMPO` — that is not how these are named and it adds a rule
@@ -105,7 +105,7 @@ the list spending money with zeros next to it.
 
 ### Rule 2 — never use the same keyword twice at the same time
 
-One live ad, one word. If two ads both say DM me TRIM, nothing can tell you which
+One live ad, one word. If two ads both say DM me STRONG, nothing can tell you which
 one produced the sale.
 
 Reusing a word later is fine — leave a few weeks after you turn the first one off.
@@ -158,9 +158,9 @@ Ask for these in one message, with the exact link for each:
 
 | What | Where | Why it matters |
 | --- | --- | --- |
-| Supabase access token | supabase.com/dashboard/account/tokens → Generate new token | This is where their numbers get stored |
+| Supabase **personal access token** | supabase.com/dashboard/account/tokens → Generate new token. Starts `sbp_`. This is an ACCOUNT-level token — NOT the anon / service_role / publishable / secret keys inside a project. They will go looking in the project first; head them off. | This is where their numbers get stored |
 | Meta ad account id + access token | A **System User** token, so it never expires. The setup guide PDF has the click path | Without it there is no ad spend at all |
-| Vercel token | vercel.com/account/tokens → Create Token | This is what puts it on the internet |
+| Vercel **access token** | vercel.com/account/tokens → Create Token. Scope MUST be **Full Account** — a project-scoped token cannot create the project, and the project does not exist yet. Starts `vcp_`. | This is what puts it on the internet |
 | Their sales sheet link | Share → anyone with the link → Viewer, then copy the address | This is where money comes from |
 
 Then:
@@ -191,14 +191,28 @@ So do not say "in your Actions block". There isn't one. Walk them through adding
 **Check ManyChat Pro first.** External Request is a paid feature. If they cannot find
 it, that is why, and they will assume they are being stupid. Say it up front.
 
+**WHERE THE NEW BOX GOES.** Between the trigger and the message, not after the
+message:
+
+```
+before:   [ trigger ] ----> [ message ]
+after:    [ trigger ] ----> [ NEW action box ] ----> [ message ]
+```
+
+It has to run before anything else so the keyword is saved the instant the DM lands.
+If they have a randomiser splitting setters, the action box goes between the trigger
+and the randomiser.
+
+There is no "+ button underneath the message box" — that is not how the ManyChat
+canvas works. They add a step with the **+** button, get a new box on the canvas, and
+then drag the connecting line so it runs trigger → new box → message. Say it that
+way.
+
 **Step 1 — save the word they sent.** Explain what a custom field is before using the
 term: ManyChat keeps a card on each person, and a custom field is a blank box on that
 card that they name themselves.
 
-- Click the **+** under their existing message box
-- Choose **Action** (tell them this makes an empty box, like a to-do list ManyChat
-  runs for that person — they have probably never added one)
-- **+ Add Action** → **Set User Field**
+- Inside the action box: **+ Add Action** → **Set User Field**
 - Create a new field called `keyword`
 - Set the value to **Last Text Input**
 
@@ -295,8 +309,12 @@ The keyword arrives two ways: from `utm_content` on the booking link, and from
 
 ### The sales tracker habit
 
-When the setter books someone, they paste that person's **ManyChat conversation link**
-onto the row in the sales tracker. That is what ties the eventual sale back to the DM.
+**At the moment the call is booked** — not when it closes, not at the end of the week
+— whoever books it pastes that person's **ManyChat conversation link** onto the row.
+
+The timing is the whole point. They are already looking at the conversation when they
+book, so it takes three seconds. Left until the sale closes, the conversation is
+twelve messages back, nobody remembers which Sarah it was, and the row stays blank.
 
 Check they actually have that column. If they do not, tell them to add it now, before
 setup finishes — retrofitting it later means the sales already in the sheet can never

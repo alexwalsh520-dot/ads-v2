@@ -11,7 +11,8 @@ by hand in the chat. They have never heard of a UTM.
 
 So: assume nothing. Define every term the first time it appears. Start from what
 they already have on screen and add to it. Never say "simply" or "just" about
-something that is not.
+something that is not. Analogies must come from running a business, not from
+logistics or engineering.
 
 Contains NO webhook addresses, secrets, or request bodies — those are generated
 per install and handed over privately.
@@ -26,85 +27,130 @@ from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
-    BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer, Table, TableStyle,
-    KeepTogether, ListFlowable, ListItem, PageBreak,
+    BaseDocTemplate, Flowable, Frame, PageTemplate, Paragraph, Spacer, Table,
+    TableStyle, KeepTogether, ListFlowable, ListItem, PageBreak,
 )
 
-VERSION = "v3"
-OUT = os.path.join(
-    os.path.dirname(__file__), "..", "docs", f"DM-Ads-Attribution-Guide-{VERSION}.pdf"
-)
+VERSION = "v4"
+HERE = os.path.dirname(__file__)
+OUT = os.path.join(HERE, "..", "docs", f"DM-Ads-Attribution-Guide-{VERSION}.pdf")
+REPO = "github.com/alexwalsh520-dot/ads-v2"
 
-INK = colors.HexColor("#16161a")
-MUTED = colors.HexColor("#5f6169")
-FAINT = colors.HexColor("#8b8d95")
-RULE = colors.HexColor("#dcdce0")
-BOXBG = colors.HexColor("#f5f5f3")
-TEACHBG = colors.HexColor("#eef2f5")
-CODEBG = colors.HexColor("#f0f0ee")
-ACCENT = colors.HexColor("#9a7b3f")
-TEACHBAR = colors.HexColor("#5b7d99")
+# ── type ──────────────────────────────────────────────────────────────────
+# Inter, bundled in scripts/fonts. Friendlier and rounder than Helvetica, and
+# bundling it means anyone rebuilding this gets the same document rather than a
+# silent fallback to something else.
+FONTS = os.path.join(HERE, "fonts")
+HAS_INTER = os.path.exists(os.path.join(FONTS, "Inter-Regular.ttf"))
+if HAS_INTER:
+    pdfmetrics.registerFont(TTFont("Inter", os.path.join(FONTS, "Inter-Regular.ttf")))
+    pdfmetrics.registerFont(TTFont("Inter-SemiBold", os.path.join(FONTS, "Inter-SemiBold.ttf")))
+    pdfmetrics.registerFont(TTFont("Inter-Bold", os.path.join(FONTS, "Inter-Bold.ttf")))
+    pdfmetrics.registerFontFamily("Inter", normal="Inter", bold="Inter-Bold")
+    BODY_FONT, BOLD_FONT, HEAD_FONT = "Inter", "Inter-Bold", "Inter-Bold"
+    SEMI_FONT = "Inter-SemiBold"
+else:
+    BODY_FONT, BOLD_FONT, HEAD_FONT, SEMI_FONT = (
+        "Helvetica", "Helvetica-Bold", "Helvetica-Bold", "Helvetica-Bold",
+    )
+
+# ── colour ────────────────────────────────────────────────────────────────
+INK = colors.HexColor("#15161a")
+MUTED = colors.HexColor("#5a5f6b")
+FAINT = colors.HexColor("#9aa0ab")
+RULE = colors.HexColor("#e4e6ea")
+YELLOW = colors.HexColor("#FFDF55")       # the accent from the reference page
+YELLOW_SOFT = colors.HexColor("#FFF8DC")
+TEACHBG = colors.HexColor("#F4F6F8")
+TEACHBAR = colors.HexColor("#8B95A5")
+CODEBG = colors.HexColor("#F7F7F5")
 
 base = getSampleStyleSheet()
 
 S = {}
-S["title"] = ParagraphStyle("title", parent=base["Title"], fontName="Helvetica-Bold",
-                            fontSize=29, leading=33, alignment=TA_LEFT, textColor=INK, spaceAfter=8)
-S["sub"] = ParagraphStyle("sub", fontName="Helvetica", fontSize=12.5, leading=18.5,
-                          textColor=MUTED, spaceAfter=18)
-S["part"] = ParagraphStyle("part", fontName="Helvetica-Bold", fontSize=9,
-                           textColor=ACCENT, spaceBefore=4, spaceAfter=2)
-S["h1"] = ParagraphStyle("h1", fontName="Helvetica-Bold", fontSize=16.5, leading=21,
-                         textColor=INK, spaceBefore=24, spaceAfter=5)
-S["h2"] = ParagraphStyle("h2", fontName="Helvetica-Bold", fontSize=11.5, leading=15.5,
-                         textColor=INK, spaceBefore=16, spaceAfter=4)
-S["body"] = ParagraphStyle("body", fontName="Helvetica", fontSize=10.5, leading=16.5,
-                           textColor=INK, spaceAfter=9)
-S["lead"] = ParagraphStyle("lead", fontName="Helvetica", fontSize=11.5, leading=17.5,
+S["title"] = ParagraphStyle("title", parent=base["Title"], fontName=HEAD_FONT,
+                            fontSize=32, leading=36, alignment=TA_LEFT, textColor=INK, spaceAfter=10)
+S["sub"] = ParagraphStyle("sub", fontName=BODY_FONT, fontSize=13, leading=20,
+                          textColor=MUTED, spaceAfter=20)
+S["part"] = ParagraphStyle("part", fontName=SEMI_FONT, fontSize=8.5,
+                           textColor=FAINT, spaceBefore=4, spaceAfter=3)
+S["h1"] = ParagraphStyle("h1", fontName=HEAD_FONT, fontSize=17.5, leading=23,
+                         textColor=INK, spaceBefore=26, spaceAfter=6)
+S["h2"] = ParagraphStyle("h2", fontName=SEMI_FONT, fontSize=12, leading=16,
+                         textColor=INK, spaceBefore=17, spaceAfter=5)
+S["body"] = ParagraphStyle("body", fontName=BODY_FONT, fontSize=10.5, leading=17,
                            textColor=INK, spaceAfter=10)
-S["small"] = ParagraphStyle("small", fontName="Helvetica", fontSize=9.4, leading=14,
-                            textColor=MUTED, spaceAfter=7)
-S["cell"] = ParagraphStyle("cell", fontName="Helvetica", fontSize=9.6, leading=14, textColor=INK)
-S["cellhead"] = ParagraphStyle("cellhead", fontName="Helvetica-Bold", fontSize=9.6,
-                               leading=14, textColor=INK)
-S["code"] = ParagraphStyle("code", fontName="Courier", fontSize=9.4, leading=14.5, textColor=INK)
-S["callout"] = ParagraphStyle("callout", fontName="Helvetica", fontSize=10, leading=15, textColor=INK)
-S["li"] = ParagraphStyle("li", fontName="Helvetica", fontSize=10.5, leading=16.5,
-                         textColor=INK, spaceAfter=6)
+S["lead"] = ParagraphStyle("lead", fontName=BODY_FONT, fontSize=11.5, leading=18.5,
+                           textColor=INK, spaceAfter=11)
+S["small"] = ParagraphStyle("small", fontName=BODY_FONT, fontSize=9.5, leading=15,
+                            textColor=MUTED, spaceAfter=8)
+S["cell"] = ParagraphStyle("cell", fontName=BODY_FONT, fontSize=9.7, leading=14.5, textColor=INK)
+S["cellhead"] = ParagraphStyle("cellhead", fontName=SEMI_FONT, fontSize=9.7,
+                               leading=14.5, textColor=INK)
+S["code"] = ParagraphStyle("code", fontName="Courier", fontSize=9.3, leading=14.5, textColor=INK)
+S["callout"] = ParagraphStyle("callout", fontName=BODY_FONT, fontSize=10.2, leading=16, textColor=INK)
+S["li"] = ParagraphStyle("li", fontName=BODY_FONT, fontSize=10.5, leading=17,
+                         textColor=INK, spaceAfter=7)
 
 
 def P(text, style="body"):
     return Paragraph(text, S[style])
 
 
+class RoundedBox(Flowable):
+    """A soft-cornered panel. Rounded corners read as friendly; square ones read
+    as a compliance document, and this is meant to be enjoyable to work through."""
+
+    def __init__(self, content, width, fill, stroke=None, radius=9, pad=13, bar=None):
+        Flowable.__init__(self)
+        self.content, self.boxwidth = content, width
+        self.fill, self.stroke, self.radius, self.pad, self.bar = fill, stroke, radius, pad, bar
+        self._h = 0
+
+    def wrap(self, availWidth, availHeight):
+        inner = self.boxwidth - 2 * self.pad - (6 if self.bar else 0)
+        _, h = self.content.wrap(inner, availHeight)
+        self._h = h + 2 * self.pad
+        return self.boxwidth, self._h
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        c.setFillColor(self.fill)
+        if self.stroke:
+            c.setStrokeColor(self.stroke)
+            c.setLineWidth(0.8)
+        c.roundRect(0, 0, self.boxwidth, self._h, self.radius,
+                    stroke=1 if self.stroke else 0, fill=1)
+        if self.bar:
+            c.setFillColor(self.bar)
+            c.roundRect(0, 0, 5, self._h, 2.5, stroke=0, fill=1)
+        c.restoreState()
+        offset = self.pad + (6 if self.bar else 0)
+        self.content.drawOn(c, offset, self.pad)
+
+
 def code(lines):
     body = "<br/>".join(l.replace(" ", "&nbsp;") for l in lines)
-    t = Table([[Paragraph(body, S["code"])]], colWidths=[6.5 * inch])
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), CODEBG),
-        ("LEFTPADDING", (0, 0), (-1, -1), 11), ("RIGHTPADDING", (0, 0), (-1, -1), 11),
-        ("TOPPADDING", (0, 0), (-1, -1), 9), ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
-    ]))
-    return KeepTogether([t, Spacer(1, 10)])
+    box = RoundedBox(Paragraph(body, S["code"]), 6.5 * inch, CODEBG, radius=8, pad=13)
+    return KeepTogether([box, Spacer(1, 12)])
 
 
-def callout(label, text, kind="warn"):
+def callout(label, text):
+    """A warning or an emphasis. Yellow, like the reference page's accent."""
     inner = Paragraph(f"<b>{label}</b>&nbsp; {text}", S["callout"])
-    bg, bar = (TEACHBG, TEACHBAR) if kind == "teach" else (BOXBG, ACCENT)
-    t = Table([[inner]], colWidths=[6.5 * inch])
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), bg),
-        ("LINEBEFORE", (0, 0), (0, -1), 2.4, bar),
-        ("LEFTPADDING", (0, 0), (-1, -1), 12), ("RIGHTPADDING", (0, 0), (-1, -1), 12),
-        ("TOPPADDING", (0, 0), (-1, -1), 10), ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
-    ]))
-    return KeepTogether([t, Spacer(1, 11)])
+    box = RoundedBox(inner, 6.5 * inch, YELLOW_SOFT, stroke=YELLOW, radius=10, pad=14)
+    return KeepTogether([box, Spacer(1, 13)])
 
 
 def teach(label, text):
-    """A 'what this word means' sidebar. Different colour so it reads as optional."""
-    return callout(label, text, kind="teach")
+    """A 'what this word means' sidebar. Grey, so it reads as optional."""
+    inner = Paragraph(f"<b>{label}</b>&nbsp; {text}", S["callout"])
+    box = RoundedBox(inner, 6.5 * inch, TEACHBG, radius=10, pad=14, bar=TEACHBAR)
+    return KeepTogether([box, Spacer(1, 13)])
 
 
 def table(rows, widths, head=True):
@@ -116,46 +162,46 @@ def table(rows, widths, head=True):
     cmds = [
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 12),
-        ("TOPPADDING", (0, 0), (-1, -1), 7), ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
-        ("LINEBELOW", (0, 0), (-1, -2), 0.4, RULE),
+        ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LINEBELOW", (0, 0), (-1, -2), 0.5, RULE),
     ]
     if head:
-        cmds.append(("LINEBELOW", (0, 0), (-1, 0), 0.9, INK))
+        cmds.append(("LINEBELOW", (0, 0), (-1, 0), 1.2, INK))
     t.setStyle(TableStyle(cmds))
-    return [t, Spacer(1, 13)]
+    return [t, Spacer(1, 14)]
 
 
 def steps(items):
     return ListFlowable(
-        [ListItem(Paragraph(t, S["li"]), leftIndent=20) for t in items],
-        bulletType="1", bulletFontName="Helvetica-Bold", bulletFontSize=10.5,
-        leftIndent=20, bulletDedent=20, spaceAfter=11,
+        [ListItem(Paragraph(t, S["li"]), leftIndent=22) for t in items],
+        bulletType="1", bulletFontName=BOLD_FONT, bulletFontSize=10.5,
+        leftIndent=22, bulletDedent=22, spaceAfter=12,
     )
 
 
 def bullets(items):
     return ListFlowable(
-        [ListItem(Paragraph(t, S["li"]), leftIndent=15) for t in items],
-        bulletType="bullet", bulletFontSize=6, leftIndent=15, bulletDedent=11, spaceAfter=11,
+        [ListItem(Paragraph(t, S["li"]), leftIndent=16) for t in items],
+        bulletType="bullet", bulletFontSize=6, leftIndent=16, bulletDedent=12, spaceAfter=12,
     )
 
 
 def rule():
     t = Table([[""]], colWidths=[6.5 * inch], rowHeights=[1])
-    t.setStyle(TableStyle([("LINEABOVE", (0, 0), (-1, 0), 0.9, INK)]))
+    t.setStyle(TableStyle([("LINEABOVE", (0, 0), (-1, 0), 2.2, YELLOW)]))
     return KeepTogether([t, Spacer(1, 2)])
 
 
 def header_footer(canvas, doc):
     canvas.saveState()
     if doc.page > 1:
-        canvas.setFont("Helvetica", 7.8)
+        canvas.setFont(SEMI_FONT, 7.6)
         canvas.setFillColor(FAINT)
         canvas.drawString(1 * inch, LETTER[1] - 0.62 * inch, "DM ADS ATTRIBUTION")
         canvas.setStrokeColor(RULE)
-        canvas.setLineWidth(0.4)
+        canvas.setLineWidth(0.5)
         canvas.line(1 * inch, LETTER[1] - 0.72 * inch, LETTER[0] - 1 * inch, LETTER[1] - 0.72 * inch)
-    canvas.setFont("Helvetica", 7.8)
+    canvas.setFont(BODY_FONT, 7.6)
     canvas.setFillColor(FAINT)
     canvas.drawRightString(LETTER[0] - 1 * inch, 0.62 * inch, str(doc.page))
     canvas.restoreState()
@@ -176,7 +222,7 @@ A(P("DM Ads Attribution", "title"))
 A(P("Know which ad actually made you money. And stop typing numbers into "
     "spreadsheets forever.", "sub"))
 A(rule())
-A(Spacer(1, 18))
+A(Spacer(1, 20))
 
 A(P("Let me guess how you do this right now", "h1"))
 A(P("You launch a campaign. You start a new Google Sheet for it, because the last one got "
@@ -214,12 +260,12 @@ A(P("What you get instead", "h1"))
 A(P("One page. One row per ad. Everything that ad actually produced, all the way to cash."))
 A(code([
     "AD          SPENT    DMs    BOOKED   SHOWED   SALES    CASH     ROAS",
-    "TRIM        $840     94     22       14       3        $4,100   4.9x",
-    "MIGHTY      $610     71     9        5        1        $1,200   2.0x",
+    "STRONG      $840     94     22       14       3        $4,100   4.9x",
+    "SHREDDED    $610     71     9        5        1        $1,200   2.0x",
     "SUMMIT      $600     52     4        1        0        $0       0.0x",
 ]))
 A(P("Made-up numbers, but that is the shape of it. And look how obvious the decision becomes. "
-    "SUMMIT has eaten $600 and produced nothing. TRIM is printing. You would never have seen "
+    "SUMMIT has eaten $600 and produced nothing. STRONG is printing. You would never have seen "
     "that in Ads Manager, because Ads Manager stops at the DM."))
 
 A(P("And you stop typing things in", "h2"))
@@ -231,8 +277,7 @@ A(bullets([
     "your sales come out of the tracker you already keep",
 ]))
 A(P("Nobody logs anything. You are not chasing your setter for numbers on a Monday. You are not "
-    "starting a new sheet for the next campaign. You open one page on your phone and it is "
-    "already correct."))
+    "starting a new sheet for the next campaign. You open one page and it is already correct."))
 A(P("Every campaign and every ad set you launch from then on is tracked from the minute it goes "
     "live. You do not have to do anything to add it."))
 
@@ -253,32 +298,43 @@ A(P("How it actually works", "h1"))
 A(P("Worth ten minutes. Understand this bit and the rest of the setup makes sense — and you "
     "will know straight away why a number looks wrong later on.", "lead"))
 
-A(P("Your keyword is a tracking number", "h1"))
-A(P("Think about posting a parcel. It gets a tracking number, and that number stays with it the "
-    "whole way. Warehouse, van, doorstep. You can always find out where it is, because the "
-    "number never leaves the parcel."))
-A(P("Your keyword is that tracking number."))
-A(P("Your ad says <i>DM me TRIM</i>. TRIM is the number on this parcel. And TRIM has to stay "
-    "attached to that person all the way from the ad to the money in your account."))
+A(P("Your keyword works like a promo code", "h1"))
+A(P("You already know how a promo code works. You give one code to one podcast and a different "
+    "code to another. When the orders come in, the code tells you which one sent them. Same "
+    "product, same checkout — the code is the only thing that separates them."))
+A(P("Your keyword is that code."))
+A(P("Your ad says <i>DM me STRONG</i>. Anyone who sends you STRONG came from that ad. Not "
+    "probably. Definitely."))
+
+A(P("Which is why one ad gets one word", "h2"))
+A(P("Think about what happens if you give the same promo code to two podcasts. The orders come "
+    "in, they all say the same code, and you have no idea which show actually worked. The code "
+    "stops telling you anything."))
+A(P("Exactly the same here. One ad, one word. If two ads are both running STRONG at the same "
+    "time, and someone DMs STRONG and buys, nothing on earth can tell you which ad earned it."))
+A(P("So every live ad gets its own word. That is the whole rule."))
 
 A(P("Let us follow one person", "h1"))
 A(P("Sarah is scrolling Instagram on a Tuesday."))
-A(P("<b>1. She sees your ad.</b> It says DM me the word TRIM. Behind the scenes this ad is "
-    "<i>named</i> TRIM in Ads Manager, so the system already knows every dollar spent on it "
-    "belongs to the word TRIM."))
-A(P("<b>2. She DMs you TRIM.</b> ManyChat replies to her, the same as it does today. But now it "
-    "also quietly writes down two things: who Sarah is, and that she said TRIM. That is one DM "
-    "on the TRIM row."))
+A(P("<b>1. She sees your ad.</b> It says DM me the word STRONG. Behind the scenes this ad is "
+    "<i>named</i> STRONG in Ads Manager, so the system already knows every dollar spent on it "
+    "belongs to the word STRONG."))
+A(P("<b>2. She DMs you STRONG.</b> ManyChat replies to her, the same as it does today. But now "
+    "it also quietly writes down two things: who Sarah is, and that she said STRONG. That is "
+    "one DM on the STRONG row."))
 A(P("<b>3. Your setter chats to her.</b> Nothing changes here. Normal conversation."))
 A(P("<b>4. Your setter books her.</b> Instead of pasting the calendar link by hand, they put a "
-    "tag on her. ManyChat sends her the link automatically — and tucks TRIM inside that link "
-    "where she never sees it. That is one booked call on the TRIM row."))
-A(P("<b>5. She turns up.</b> Your booking tool tells the system she was there. One call taken "
-    "on the TRIM row."))
-A(P("<b>6. She buys.</b> You fill in your sales tracker like you always do, and paste her "
-    "ManyChat chat link onto her row. That link is how the system knows this sale is Sarah — "
-    "and Sarah was TRIM."))
-A(P("<b>Done.</b> $2,000 lands on the TRIM row. You now know, for a fact, that ad produced a "
+    "tag on her — a sticker, basically. You will build a small automation (this guide walks you "
+    "through it) that watches for that sticker and sends the calendar link the moment it "
+    "appears. And the link it sends has STRONG tucked inside it, where Sarah never sees it. "
+    "That is one booked call on the STRONG row."))
+A(P("<b>5. Your setter pastes her ManyChat link into your sales sheet</b> — right there, at the "
+    "moment they book her. Three seconds. This is what lets the sale find its way back to her "
+    "later."))
+A(P("<b>6. She turns up, and she buys.</b> You fill in your sales sheet like you always do. "
+    "Because her ManyChat link is already on that row, the system knows this sale is Sarah — "
+    "and Sarah was STRONG."))
+A(P("<b>Done.</b> $2,000 lands on the STRONG row. You now know, for a fact, that ad produced a "
     "paying client."))
 
 A(callout("That is the entire system.",
@@ -297,7 +353,7 @@ A(table([
     ["Keyword → DM", "Automatic, once ManyChat is set up"],
     ["DM → booked call", "Automatic, from the tag your setter applies"],
     ["Booked call → showed up", "Automatic, from your booking tool"],
-    ["Sale → the person", "<b>You.</b> By pasting the ManyChat link on the sales row"],
+    ["The person → the sale", "<b>You.</b> By pasting the ManyChat link on the row when you book"],
 ], [2.3 * inch, 4.2 * inch]))
 A(P("Both of yours take about three seconds each, and they are the whole difference between "
     "real numbers and blank ones. They get a section of their own next."))
@@ -306,8 +362,8 @@ A(P("What happens when a handoff breaks", "h1"))
 A(P("Nothing dramatic. The chain stops there for that one person, and the system tells you "
     "instead of making something up."))
 A(P("If an ad is named wrong, that ad shows its spend and zeros everywhere else. If the "
-    "ManyChat link is missing from a sales row, that sale shows as <b>unattributed</b> — real "
-    "money, unknown source."))
+    "ManyChat link is missing from a row, that sale shows as <b>unattributed</b> — real money, "
+    "unknown source."))
 
 A(callout("This is the most important promise in the whole thing.",
           "It will never guess. If it cannot prove a sale came from a particular ad, it says "
@@ -331,25 +387,24 @@ A(P("When you make an ad in Ads Manager you give it a name. Whatever word that a
     "to DM you — that is the name."))
 A(table([
     ["Your ad tells people to send", "Name the ad"],
-    ["TRIM", "<b>TRIM</b>"],
-    ["MIGHTY", "<b>MIGHTY</b>"],
+    ["STRONG", "<b>STRONG</b>"],
+    ["SHREDDED", "<b>SHREDDED</b>"],
     ["SUMMIT", "<b>SUMMIT</b>"],
 ], [2.6 * inch, 3.9 * inch]))
 A(P("That is genuinely it. Nothing else in the name. The keyword on its own is the cleanest way "
     "to do it, and it is how I name mine."))
 A(callout("Want other stuff in the name too? Fine — but the keyword must be LAST.",
           "The system reads the <b>last word</b> of the name. So "
-          "<font face='Courier'>Vets 35 | TRIM</font> works fine and reads as TRIM. But "
-          "<font face='Courier'>TRIM retarget</font> reads as \"retarget\", and that ad will "
+          "<font face='Courier'>Vets 35 | STRONG</font> works fine and reads as STRONG. But "
+          "<font face='Courier'>STRONG retarget</font> reads as \"retarget\", and that ad will "
           "never be credited with anything, ever. If in doubt, just name it the keyword."))
 A(P("An ad named wrong is not broken and nothing will warn you. It sits in your list showing "
     "its spend, with zeros in every other column, forever. That is the system being honest — "
     "it cannot tie a single DM to that ad, so it will not pretend it can."))
 
 A(P("Habit 2 — one keyword, one live ad", "h1"))
-A(P("Never have two ads running at the same time that both say DM me TRIM."))
-A(P("If you do, and someone DMs TRIM and buys $3,000, there is no way on earth to know which of "
-    "the two ads earned it. That is not a limit of this tool. Nothing could know that."))
+A(P("The promo code rule from earlier. Never have two ads running at the same time that both "
+    "say DM me STRONG."))
 A(P("Using a word again months later is fine. Just leave a few weeks after switching the first "
     "one off, so a straggler DM from the old ad does not get credited to the new one."))
 
@@ -390,16 +445,22 @@ A(table([
 A(P("You probably need to add one column", "h2"))
 A(P("The <b>ManyChat link</b> column. Most people do not have this yet, and it is the single "
     "most valuable column in the sheet."))
-A(P("When your setter books someone, they open that person in ManyChat, copy the link out of "
-    "the address bar, and paste it on that person's row. Three seconds."))
 A(P("Why it matters so much: without it, a sale gets matched to a DM <i>by name</i>. Two "
     "Sarahs, someone using a nickname, a typo, a maiden name — and the match quietly fails. "
     "With the link it is exact, every single time."))
+
+A(P("Whoever books the call fills it in, when they book it", "h2"))
+A(P("Not at the end of the week. Not when the sale closes. <b>At the moment they book the "
+    "call.</b>"))
+A(P("They open that person in ManyChat, copy the link out of the address bar, and paste it on "
+    "that person's row. Three seconds, while they are already looking at the conversation."))
+A(P("Do it later and it will not happen. The conversation will be twelve messages back, they "
+    "will not remember which Sarah it was, and the row stays blank."))
 A(callout("Add this column today, before you set anything else up.",
           "Rows already in your sheet without it can never be matched afterwards. Every day you "
           "wait is another day of sales that can never be traced back to an ad."))
 
-A(P("And someone has to fill it in", "h2"))
+A(P("And two columns someone has to keep filling in", "h2"))
 A(P("Whoever takes the call fills in whether they showed up and what they paid. That has always "
     "been a human job and it stays one. Empty columns mean no show rate and no revenue — not "
     "broken, just nothing there to read."))
@@ -412,7 +473,8 @@ A(PageBreak())
 
 A(P("PART FOUR", "part"))
 A(P("Setting it up", "h1"))
-A(P("Open Claude Code, paste in the link to the project, and tell it to install this.", "lead"))
+A(P("Open Claude Code, paste in the link below, and tell it to install this.", "lead"))
+A(code([f"https://{REPO}"]))
 A(P("It will ask you questions about your business — what you use for DMs, what you book calls "
     "with, what your ad account is. Then it builds the whole thing. You do not edit any files "
     "or write anything technical.", "lead"))
@@ -424,11 +486,11 @@ A(P("Claude cannot log into your accounts, so these four are on you. Get them fi
     "everything else goes quickly."))
 A(table([
     ["", "What", "Where from", "What it is for"],
-    ["1", "Supabase token", "supabase.com", "Where your numbers get stored"],
+    ["1", "Supabase personal access token", "supabase.com", "Where your numbers get stored"],
     ["2", "Meta ad account id and token", "business.facebook.com", "Your ad spend"],
-    ["3", "Vercel token", "vercel.com", "Puts your dashboard on the internet"],
+    ["3", "Vercel access token", "vercel.com", "Puts your dashboard on the internet"],
     ["4", "Your sales tracker link", "Google Sheets", "Your money"],
-], [0.3 * inch, 2.0 * inch, 1.55 * inch, 2.65 * inch]))
+], [0.3 * inch, 2.1 * inch, 1.45 * inch, 2.65 * inch]))
 
 A(teach("What is a \"token\"?",
         "A very long password that lets one app talk to another on your behalf. You generate "
@@ -436,15 +498,27 @@ A(teach("What is a \"token\"?",
 
 A(P("1. Supabase — where your numbers get stored", "h1"))
 A(P("A database is just a filing cabinet for numbers. This one is free at the size you need."))
+A(callout("Supabase has several different keys. You want ONE specific one.",
+          "Inside a Supabase project you will find things called <i>anon</i>, <i>service role</i>, "
+          "<i>publishable</i> and <i>secret</i> keys. <b>You do not want any of those.</b> You "
+          "want an account-level <b>personal access token</b>, which lives somewhere completely "
+          "different — under your account settings, not inside a project. Follow the steps "
+          "below exactly and you will land in the right place."))
 A(steps([
-    "Go to <b>supabase.com</b> and make an account.",
-    "Go to <b>supabase.com/dashboard/account/tokens</b>",
-    "Click <b>Generate new token</b>. Name it anything you like.",
-    "Copy it and paste it to Claude.",
+    "Go to <b>supabase.com</b> and make an account. You do <b>not</b> need to create a "
+    "project — Claude does that part for you.",
+    "Go straight to this address: <b>supabase.com/dashboard/account/tokens</b>",
+    "Check the page title says <b>Access Tokens</b> and that you are in your <b>account</b> "
+    "settings, not inside a project.",
+    "Click <b>Generate new token</b>. Give it a name like <i>ads dashboard</i>.",
+    "Copy it. It starts with <font face='Courier'>sbp_</font> — that prefix is how you know "
+    "you got the right one. Supabase only shows it once.",
+    "Paste it to Claude.",
 ]))
-A(P("That is your entire involvement with Supabase. Claude builds everything inside it from "
-    "that one token — you never have to click around in there.", "small"))
 
+A(PageBreak())
+
+A(P("PART FOUR", "part"))
 A(P("2. Meta — your ad spend", "h1"))
 A(P("Two pieces: which ad account, and permission to read it."))
 A(P("Your ad account id", "h2"))
@@ -472,11 +546,21 @@ A(callout("This is the fiddliest thing in the whole setup.",
 A(P("3. Vercel — where your dashboard lives", "h1"))
 A(P("This is what turns it into a real website with a real address, instead of something that "
     "only works while your laptop is open."))
+A(callout("The Scope setting matters. Pick Full Account.",
+          "Vercel lets you limit a token to one project. That sounds sensible and it will "
+          "<b>break the setup</b> — your project does not exist yet, so a project-limited token "
+          "has nothing to point at and cannot create one. Choose <b>Full Account</b>."))
 A(steps([
     "Go to <b>vercel.com</b> and make an account.",
+    "At the top left of the dashboard, make sure you are looking at your <b>personal "
+    "account</b>, not a team.",
     "Go to <b>vercel.com/account/tokens</b>",
-    "Click <b>Create Token</b>. Name it anything.",
-    "Copy it and paste it to Claude.",
+    "Click <b>Create Token</b>. Give it a name like <i>ads dashboard</i>.",
+    "Under <b>Scope</b>, choose <b>Full Account</b>.",
+    "Choose an expiration. Pick the longest option offered — when it expires, your dashboard "
+    "stops updating until you make a new one.",
+    "Click <b>Create</b>, then copy the token. It starts with "
+    "<font face='Courier'>vcp_</font> and is only shown once.",
 ]))
 
 A(P("4. Your sales tracker", "h1"))
@@ -503,17 +587,17 @@ A(P("The longest part, so take your time. It is also the part that makes the who
 
 A(P("What you almost certainly have right now", "h2"))
 A(P("One automation. A trigger that fires when someone sends your keyword, and a message that "
-    "goes back to them. Like this:"))
+    "goes back to them. Two boxes joined by a line:"))
 A(code([
-    "  When someone sends \"TRIM\"    ->    Send them a message",
+    "  [ When someone sends \"STRONG\" ]  ---->  [ Send them a message ]",
 ]))
 A(P("That is a perfectly good setup and you are not throwing any of it away. You are adding to "
     "it."))
 
 A(P("What you are adding", "h2"))
 A(bullets([
-    "<b>Part A</b> — two extra steps on the end of the automation you already have, so every "
-    "DM records itself",
+    "<b>Part A</b> — one new box, slotted in <b>between</b> those two, so every DM records "
+    "itself",
     "<b>Part B</b> — one brand new automation, so booking someone also records which ad they "
     "came from",
 ]))
@@ -523,35 +607,56 @@ A(teach("Before you start, check you are on ManyChat Pro.",
         "the menu, that is why — it is not you being blind. Upgrading is the fix."))
 
 A(P("Part A — recording every DM", "h1"))
-A(P("Open the automation that already replies to your keyword. You will see your trigger box, "
-    "and your message box after it."))
+A(P("Open the automation that already replies to your keyword. You will see your keyword "
+    "trigger, and your message box, joined by a line."))
 
-A(P("Step 1: save which word they sent", "h2"))
-A(teach("What is a \"custom field\"?",
-        "ManyChat keeps a little card on every person who messages you — their name, when they "
-        "first wrote, and so on. A custom field is a blank box on that card that you get to "
-        "name and fill in yourself. You are about to make one called <b>keyword</b> and put "
-        "the word that person sent you into it. That is all a custom field is."))
+A(callout("The new box goes BETWEEN them, not at the end.",
+          "It has to run before anything else happens, so the keyword gets saved the instant "
+          "the DM lands. You are inserting a step into the middle of a chain you already have — "
+          "trigger first, then your new box, then your message."))
+A(P("So you are going from this:"))
+A(code(["  [ trigger ]  ---->  [ message ]"]))
+A(P("To this:"))
+A(code(["  [ trigger ]  ---->  [ NEW: action box ]  ---->  [ message ]"]))
+A(P("If you use a randomiser to split conversations between two setters, the new box goes "
+    "between the trigger and the randomiser. Same idea — it comes first.", "small"))
+
+A(P("Building it", "h2"))
 A(steps([
-    "Click the <b>+</b> underneath your message box.",
-    "Choose <b>Action</b>. An empty box appears — think of it as a little to-do list ManyChat "
-    "runs for that person. You have probably never used one of these. That is fine.",
-    "Inside that box click <b>+ Add Action</b>, and pick <b>Set User Field</b>.",
+    "In the flow builder, add a new step using the <b>+</b> button, and choose <b>Action</b>. "
+    "A new empty box appears on the canvas.",
+    "Drag the line so it goes <b>trigger → your new action box → your message</b>. You may "
+    "need to unhook the existing line from the trigger first, then join it back up through "
+    "the new box.",
+]))
+A(teach("What is an \"Action\" box?",
+        "A little to-do list ManyChat runs for that person before it moves on. You have "
+        "probably never added one. It does not send them anything and they never see it."))
+
+A(P("Now put two things inside that box.", "h2"))
+A(P("<b>First — save which word they sent.</b>"))
+A(teach("What is a \"custom field\"?",
+        "ManyChat keeps a card on every person who messages you — their name, when they first "
+        "wrote, and so on. A custom field is a blank box on that card that you get to name and "
+        "fill in yourself. You are about to make one called <b>keyword</b> and put the word "
+        "that person sent you into it. That is all a custom field is."))
+A(steps([
+    "Inside the action box click <b>+ Add Action</b>, and pick <b>Set User Field</b>.",
     "For the field, choose to create a new one, and call it <b>keyword</b>.",
     "For the value, pick <b>Last Text Input</b> from the list.",
 ]))
 A(callout("\"Last Text Input\" means: whatever they just typed.",
           "This is the clever bit. Because you are saving what they actually sent, <b>ONE "
-          "automation handles all of your keywords at once.</b> You do not need one for TRIM "
-          "and another for MIGHTY. Put every keyword on the same trigger and each person "
+          "automation handles all of your keywords at once.</b> You do not need one for STRONG "
+          "and another for SHREDDED. Put every keyword on the same trigger and each person "
           "records themselves correctly."))
 
-A(P("Step 2: send it over to your dashboard", "h2"))
-A(P("Stay inside the same action box. Click <b>+ Add Action</b> again and pick "
+A(P("<b>Second — send it over to your dashboard.</b>"))
+A(P("Still inside the same action box, click <b>+ Add Action</b> again and pick "
     "<b>External Request</b>."))
 A(teach("What is an \"External Request\"?",
         "It is ManyChat telling another app that something just happened. Like a text message "
-        "from ManyChat to your dashboard saying \"Sarah just sent TRIM\". Nobody sees it, and "
+        "from ManyChat to your dashboard saying \"Sarah just sent STRONG\". Nobody sees it, and "
         "it takes a fraction of a second."))
 A(P("Claude gives you the exact address to paste in, and exactly what to put in each box. "
     "Follow what it gives you — it is filled in for your account specifically."))
@@ -566,8 +671,9 @@ A(PageBreak())
 # ── B. the booking automation ────────────────────────────────────────────
 A(P("PART FIVE", "part"))
 A(P("Part B — recording every booked call", "h1"))
-A(P("This is a brand new automation. You have almost certainly never built anything like it, "
-    "and it is the highest-value twenty minutes in this guide.", "lead"))
+A(P("This is a brand new automation, separate from the one above. You have almost certainly "
+    "never built anything like it, and it is the highest-value twenty minutes in this guide.",
+    "lead"))
 
 A(P("What you do today", "h2"))
 A(P("When your setter is ready to book someone, they paste your calendar link into the chat by "
@@ -586,14 +692,15 @@ A(P("Same effort for the setter. Less, actually — one click instead of hunting
 A(teach("What is a \"tag\"?",
         "A sticker you put on a person in ManyChat. That is genuinely all it is. You make up "
         "the name. The useful part is that ManyChat can watch for a sticker being applied and "
-        "do something the moment it happens."))
+        "do something the moment it happens — which is exactly what you are about to build."))
 
 A(P("Build it", "h2"))
 A(steps([
     "In ManyChat go to <b>Settings</b>, then <b>Tags</b>, and make a new tag. Name it after "
     "the calendar it will send — something like <font face='Courier'>1_Day_Calendar</font>. "
     "If you offer more than one calendar, make one tag for each.",
-    "Go to <b>Automation</b> and start a <b>New Automation</b>.",
+    "Go to <b>Automation</b> and start a <b>New Automation</b>. This is a separate one, not "
+    "the keyword automation you edited in Part A.",
     "For the trigger, choose <b>Contact event occurs</b>, then <b>Tag applied</b>, then pick "
     "the tag you just made.",
     "Add one step: <b>Send Message</b>.",
@@ -603,9 +710,9 @@ A(steps([
 
 A(P("Adding the keyword to the link", "h2"))
 A(teach("What you are about to do, in plain terms.",
-        "You are sticking a little label on the end of your booking link. When Sarah clicks it, "
+        "You are sticking a small label on the end of your booking link. When Sarah clicks it, "
         "the label travels along with her and lands in your booking tool, so it knows she came "
-        "from TRIM. She never sees it and it changes nothing for her."))
+        "from STRONG. She never sees it and it changes nothing for her."))
 A(P("Take your booking link and add this onto the end:"))
 A(code(["?utm_content=", "", "...then insert your keyword field straight after the = sign"]))
 A(P("So a finished link looks like this — where the last part is your keyword <i>field</i>, not "
@@ -626,10 +733,13 @@ A(P("If you offer more than one calendar — a one-day and a three-day, say — 
     "own automation, and every one of those links needs the keyword on it."))
 
 A(P("Tell your setter what changed", "h2"))
-A(P("From now on, their whole job when booking someone is: <b>apply the tag</b>. The link goes "
-    "out by itself with the keyword already inside it."))
-A(P("Say this to them out loud. If they keep pasting the old link by hand out of habit, those "
-    "bookings arrive with nothing attached and can never be traced."))
+A(P("Two things change for them, and both need saying out loud:"))
+A(bullets([
+    "To book someone, <b>apply the tag</b>. The link goes out by itself. Do not paste the old "
+    "link by hand — those bookings arrive with nothing attached.",
+    "Then <b>paste that person's ManyChat link into the sales sheet</b>, straight away, on "
+    "the row for that booking.",
+]))
 
 A(P("Last piece: your booking tool", "h1"))
 A(P("Whatever you book calls with — GoHighLevel, Calendly, anything — needs to tell the "
@@ -649,10 +759,9 @@ A(PageBreak())
 # ═══════════════════════════════════════════════════════════════════════════
 
 A(P("PART SIX", "part"))
-A(P("You are done. What now?", "h1"))
+A(P("You are done", "h1"))
 A(P("You have your own web address, something like <font face='Courier'>your-name.vercel."
-    "app</font>, behind a password you picked. It works on your phone — put it on your home "
-    "screen."))
+    "app</font>, behind a password you picked."))
 A(P("It updates itself every hour, whether your laptop is on or not."))
 
 A(P("Check these four before you trust it", "h2"))
@@ -660,11 +769,11 @@ A(table([
     ["", "Check", "If it comes back empty"],
     ["&#9744;", "Your ad spend is showing", "Tell Claude — usually the Meta token"],
     ["&#9744;", "Send yourself a test DM with one of your keywords. It shows up in the DM column",
-     "The ManyChat action did not save"],
+     "The action box did not save, or it is after the message instead of before it"],
     ["&#9744;", "Put your booking tag on yourself. You get the link, and it has the keyword on "
      "the end of it", "The keyword is black, not blue"],
     ["&#9744;", "Ask Claude to run the setup check. It comes back clean", "It will tell you what to fix"],
-], [0.3 * inch, 3.4 * inch, 2.8 * inch]))
+], [0.3 * inch, 3.2 * inch, 3.0 * inch]))
 A(P("Do not skip these. A setup that finished but shows an empty table is not finished, and you "
     "will not notice for a week."))
 
@@ -675,13 +784,30 @@ A(P("The dashboard is instant. Your sales cycle is not. Someone who DMs you toda
 A(P("Cost per DM and cost per booked call tell you something within a couple of days. ROAS "
     "needs longer."))
 
+A(P("Why this is worth doing now", "h1"))
+A(P("Right now you are making budget decisions on a number Facebook inflates and a feeling "
+    "about which ads are working. That is not a small problem. It is the difference between "
+    "your current revenue and your next level.", "lead"))
+A(bullets([
+    "<b>You stop wasting spend.</b> The ad quietly eating $600 a month and producing nothing "
+    "becomes obvious on day one instead of never.",
+    "<b>You scale the right thing.</b> When you find the ad that actually produces buyers, you "
+    "can put real money behind it and know it will hold.",
+    "<b>You get your time back.</b> No more Monday mornings pulling numbers together. No more "
+    "asking your setter what happened last week.",
+    "<b>You decide faster.</b> The gap between \"something changed\" and \"I know what changed\" "
+    "goes from weeks to hours.",
+]))
+A(P("Every week you run without this is a week of spend you cannot account for, and a week of "
+    "data you will never get back. Set it up once and it runs forever."))
+
 A(P("When something looks off", "h1"))
 A(P("Tell Claude what you are seeing, in normal words. There is a check built in that catches "
     "most of it. The usual suspects:"))
 A(table([
     ["What you see", "What it almost always is"],
     ["One ad shows spend and zeros everywhere else", "Its name does not end in its keyword"],
-    ["No DMs at all", "The ManyChat action did not save, or you are not on Pro"],
+    ["No DMs at all", "The action box is missing, in the wrong place, or you are not on Pro"],
     ["Bookings arriving with no keyword on them", "The keyword in the booking link is black, not blue"],
     ["No booked calls at all", "Your sales calendars were never marked"],
     ["Booked calls look too low", "Two calendars with nearly the same name, splitting them"],
@@ -689,12 +815,15 @@ A(table([
     ["Everything froze on a certain date", "Your Meta token expired. Make a System User one"],
 ], [2.6 * inch, 3.9 * inch]))
 
-A(Spacer(1, 14))
+A(Spacer(1, 16))
 A(rule())
-A(Spacer(1, 10))
-A(P("<b>The whole thing in one sentence:</b> the keyword goes at the end of the ad name, gets "
-    "saved when they DM you, rides along inside the booking link, and lands on the sales row. "
-    "Four handoffs. Claude builds three of them.", "small"))
+A(Spacer(1, 12))
+A(P("<b>Stuck on anything?</b> Ask your Claude first — it has the full setup instructions and "
+    "it knows this system inside out. If you are still stuck after that, come and ask me. More "
+    "than happy to help you get it working."))
+A(P("<b>And the whole thing in one sentence:</b> the keyword goes at the end of the ad name, "
+    "gets saved when they DM you, rides along inside the booking link, and lands on the sales "
+    "row. Four handoffs. Claude builds three of them.", "small"))
 
 doc = BaseDocTemplate(
     os.path.abspath(OUT), pagesize=LETTER,
@@ -706,3 +835,5 @@ frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="body"
 doc.addPageTemplates([PageTemplate(id="main", frames=[frame], onPage=header_footer)])
 doc.build(story)
 print(f"wrote {os.path.abspath(OUT)}")
+if not HAS_INTER:
+    print("NOTE: Inter not found in scripts/fonts — fell back to Helvetica.")

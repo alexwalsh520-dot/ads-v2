@@ -58,7 +58,7 @@ ManyChat, and share your sales sheet. That's your side of it.
 
 About 45 minutes, most of it waiting for accounts to create.
 
-**[Full setup guide (PDF) →](docs/DM-Ads-Attribution-Guide-v3.pdf)**
+**[Full setup guide (PDF) →](docs/DM-Ads-Attribution-Guide-v4.pdf)**
 
 ---
 
@@ -67,30 +67,32 @@ About 45 minutes, most of it waiting for accounts to create.
 **1. Name the ad after the keyword.**
 
 ```
-Ad says "DM me TRIM"   →   name the ad:   TRIM
+Ad says "DM me STRONG"   →   name the ad:   STRONG
 ```
 
 Extra text is allowed, but then the keyword has to be the **last word** —
-`Lead Magnet | TRIM` works, `TRIM retarget` does not.
+`Lead Magnet | STRONG` works, `STRONG retarget` does not.
 
 That word is the whole connection between money going out and DMs coming in. An ad
 named wrong still shows its spend and sits there with zeros beside it forever.
 
 **2. Never run two ads with the same keyword at once.**
 
-One live ad, one word. If two ads both say DM me TRIM, nothing can tell you which one
+One live ad, one word. If two ads both say DM me STRONG, nothing can tell you which one
 produced the sale. Reusing a word later is fine — just leave a few weeks.
 
 ---
 
 ## How the keyword travels
 
+Think of it like a promo code. One code per ad, and it rides all the way to the sale.
+
 | Where | What carries it |
 | --- | --- |
 | The ad | the ad's **name** in Ads Manager |
-| The DM | what they typed, caught by ManyChat into a `keyword` field |
-| The booking | `utm_content` on the booking link your setter sends |
-| The sale | the ManyChat link pasted on the row in your sales tracker |
+| The DM | what they typed, saved by ManyChat into a `keyword` field |
+| The booking | `utm_content` on the booking link, sent automatically when your setter tags them |
+| The sale | the ManyChat link pasted on the row when the call is **booked** |
 
 Four links. Break one and that person's journey goes dark from there — not wrong, just
 unknown, which the dashboard shows you honestly.
@@ -140,7 +142,7 @@ on or not.
 
 ## Docs
 
-- **[Setup guide (PDF)](docs/DM-Ads-Attribution-Guide-v3.pdf)** — why this exists, and every step, for a human
+- **[Setup guide (PDF)](docs/DM-Ads-Attribution-Guide-v4.pdf)** — why this exists, and every step, for a human
 - **[DATA-RULES.md](docs/DATA-RULES.md)** — what every number means and when it's allowed to change
 - **[CLAUDE.md](CLAUDE.md)** — how an AI assistant should install and look after this
 

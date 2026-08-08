@@ -5,8 +5,11 @@
 //
 //     npm run deploy
 //
-// You need a Vercel token:
-//     vercel.com/account/tokens  →  Create token  (scope: full account)
+// You need a Vercel access token:
+//     vercel.com/account/tokens  →  Create Token
+// The scope MUST be "Full Account". A project-scoped token cannot create a
+// project, and the project does not exist yet, so a scoped token fails in a way
+// that reads like a permissions bug rather than a wrong choice at setup.
 // Put it in .env.local as VERCEL_TOKEN, or pass --token=...
 //
 // WHY THIS MATTERS, and it is easy to miss: running the app on your own
@@ -34,12 +37,15 @@ const args = Object.fromEntries(
 const token = args.token || getEnv("VERCEL_TOKEN");
 if (!token) {
   console.error(`
-${c.bold("A Vercel token is needed.")}
+${c.bold("A Vercel access token is needed.")}
 
   1. Go to  https://vercel.com/account/tokens
-  2. Click  Create Token.  Name it anything. Scope: your account.
-  3. Copy it
-  4. Add this line to .env.local:
+  2. Click  Create Token.  Name it anything.
+  3. Set Scope to  FULL ACCOUNT.  This matters: a project-scoped token cannot
+     create a project, and yours does not exist yet.
+  4. Pick the longest expiry offered, then Create.
+  5. Copy it. It starts with  vcp_
+  6. Add this line to .env.local:
 
        VERCEL_TOKEN=your_token_here
 
