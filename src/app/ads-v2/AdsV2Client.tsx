@@ -144,7 +144,11 @@ export default function AdsV2Client({ publicToken, lockedAccount, creators = [] 
       </div>
 
       <div className="filter-bar">
-        {!isPublic && <AccountDropdown value={account} onChange={setAccount} />}
+        {/* Nothing to choose between with a single business, so the picker
+            is not rendered at all rather than shown with one option in it. */}
+        {!isPublic && creators.length > 1 && (
+          <AccountDropdown value={account} onChange={setAccount} />
+        )}
         <StatusSegmented value={status} onChange={setStatus} />
         <span className="filter-divider" />
         <DateDropdown preset={preset} range={range} onApply={applyDate} />

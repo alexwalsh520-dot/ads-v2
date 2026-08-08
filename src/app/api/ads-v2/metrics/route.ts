@@ -3,7 +3,7 @@
 // request time. On a miss it returns "preparing" and schedules the shared
 // background build after the response, exactly like the table route.
 import { NextRequest, NextResponse, after } from "next/server";
-import { auth } from "@/auth";
+import { isSignedIn } from "@/auth";
 import { ADSV2_SERVED_CLIENTS } from "@/lib/ads-v2/config";
 import { serveMetrics, prepareWindow } from "@/lib/ads-v2/serve";
 import { rangeForPreset, todayEt, type PresetId } from "@/lib/ads-v2/time";
@@ -25,8 +25,7 @@ function isIsoDay(v: string | null): v is string {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isSignedIn())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const sp = req.nextUrl.searchParams;
   const account = (ACCOUNTS.has(sp.get("account") || "") ? sp.get("account") : "all") as AdsV2Account;

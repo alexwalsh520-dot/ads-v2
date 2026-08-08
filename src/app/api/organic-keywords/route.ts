@@ -13,21 +13,16 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { isSignedIn } from "@/auth";
 import { getServiceSupabase } from "@/lib/supabase";
 import { normalizeKeyword, displayKeyword } from "@/lib/ads-tracker/normalize";
 import { isCreatorKey } from "@/lib/creators";
 
 export const dynamic = "force-dynamic";
 
-async function authed() {
-  const session = await auth();
-  return !!session?.user;
-}
-
 /** List every registered organic keyword, per creator. */
 export async function GET() {
-  if (!(await authed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isSignedIn())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const sb = getServiceSupabase();
   const { data, error } = await sb
     .from("organic_keywords")
@@ -44,7 +39,7 @@ export async function GET() {
 
 /** Mark a keyword organic for a creator. Body: { client, keyword, note? } */
 export async function POST(req: NextRequest) {
-  if (!(await authed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isSignedIn())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const client = typeof body.client === "string" ? body.client.trim().toLowerCase() : "";
   const keyword = normalizeKeyword(body.keyword);
@@ -91,7 +86,7 @@ export async function POST(req: NextRequest) {
 
 /** Un-mark a keyword. Body: { id } OR { client, keyword } */
 export async function DELETE(req: NextRequest) {
-  if (!(await authed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isSignedIn())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const sb = getServiceSupabase();
 

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { isSignedIn } from "@/auth";
 import { ACTIVE_CREATORS } from "@/lib/creators";
 import "./ads-v2.css";
 import AdsV2Client from "./AdsV2Client";
@@ -14,8 +14,7 @@ export const metadata = {
 };
 
 export default async function AdsV2Page() {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!(await isSignedIn())) redirect("/login");
 
   // The creator list is config, so it is read on the server and handed down.
   // Nothing in the UI knows any creator's name until this point.

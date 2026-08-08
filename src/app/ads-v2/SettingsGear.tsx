@@ -197,7 +197,7 @@ function OrganicManager() {
         const list = keywords.filter((k) => k.client_key === c.key);
         return (
           <div key={c.key}>
-            <div className="sec-title">{c.name}</div>
+            {creators.length > 1 ? <div className="sec-title">{c.name}</div> : null}
             <div className="kw-row">
               {list.length === 0 && <span className="freshness">No organic keywords yet.</span>}
               {list.map((k) => (

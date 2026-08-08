@@ -1,141 +1,139 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────
-// DOCTOR — tells you exactly what is set up, what is not, and what each gap
-// actually costs you. Safe to run at any point, as often as you like: it only
-// reads.
+// DOCTOR — tells you what is working, what is not, and what to do about it.
 //
 //     npm run doctor
 //
-// Written for the person (or the assistant) doing the install: every failure
-// says what to do about it, not just that something is wrong.
+// Safe to run whenever, as often as you like. It only reads.
+//
+// Every message is written for the person doing the setup, not for a
+// developer. "Missing X" is useless on its own; what you need to know is what
+// you lose without it and where to get it.
 // ─────────────────────────────────────────────────────────────────────────
 
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { ROOT, c, loadEnv } from "./lib/env-file.mjs";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-
-// ── tiny env loader, so this works with no dependencies installed ─────────
-function loadEnv() {
-  for (const file of [".env.local", ".env"]) {
-    const p = path.join(ROOT, file);
-    if (!existsSync(p)) continue;
-    for (const line of readFileSync(p, "utf8").split("\n")) {
-      const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
-      if (!match) continue;
-      const [, key, rawValue] = match;
-      if (process.env[key]) continue;
-      process.env[key] = rawValue.replace(/^["']|["']$/g, "");
-    }
-  }
-}
 loadEnv();
 
-const c = {
-  green: (s) => `\x1b[32m${s}\x1b[0m`,
-  red: (s) => `\x1b[31m${s}\x1b[0m`,
-  yellow: (s) => `\x1b[33m${s}\x1b[0m`,
-  dim: (s) => `\x1b[2m${s}\x1b[0m`,
-  bold: (s) => `\x1b[1m${s}\x1b[0m`,
-};
-
 const results = [];
-function ok(what, detail) { results.push({ level: "ok", what, detail }); }
-function warn(what, detail) { results.push({ level: "warn", what, detail }); }
-function bad(what, detail) { results.push({ level: "bad", what, detail }); }
+const ok = (what, detail) => results.push({ level: "ok", what, detail });
+const warn = (what, detail) => results.push({ level: "warn", what, detail });
+const gap = (what, detail) => results.push({ level: "gap", what, detail });
 
-// A value that is obviously still the example is worse than a blank one: blank
-// fails loudly, a placeholder fails at runtime with a confusing error.
-const PLACEHOLDER = /YOUR-|example\.com|CHANGE.?ME|act_123456789|<.*>/i;
-
+// A value that is obviously still an example is worse than a blank one: blank
+// fails loudly and immediately, a leftover placeholder fails later with a
+// confusing error that looks like a real problem.
+const PLACEHOLDER = /^(YOUR|CHANGE|act_123456789|https:\/\/YOUR)/i;
 function has(name) {
   const value = (process.env[name] || "").trim();
-  if (!value) return false;
-  if (PLACEHOLDER.test(value)) return false;
-  return true;
+  return !!value && !PLACEHOLDER.test(value);
 }
 
-// ── config ────────────────────────────────────────────────────────────────
+// ── your config file ──────────────────────────────────────────────────────
 let config = null;
 const configPath = path.join(ROOT, "adsv2.config.json");
 if (!existsSync(configPath)) {
-  bad("adsv2.config.json", "missing. Copy adsv2.config.example.json to adsv2.config.json.");
+  gap("Your settings file", "adsv2.config.json is missing. Run `npm run setup` to make it.");
 } else {
   try {
     config = JSON.parse(readFileSync(configPath, "utf8"));
-    const creators = Array.isArray(config.creators) ? config.creators : [];
-    const active = creators.filter((x) => x.active !== false);
-    if (!creators.length) {
-      bad("creators", "none configured. Ads V2 has nothing to show.");
-    } else if (creators.some((x) => x.key === "example")) {
-      bad("creators", 'the placeholder "example" creator is still there. Replace it with a real one.');
+    const business = config.business || {};
+    if (!business.name || business.name === "My Coaching Business") {
+      warn("Your business name", "still says the placeholder. Change `business.name` in adsv2.config.json.");
     } else {
-      ok("creators", `${active.length} active of ${creators.length} configured`);
+      ok("Your business", business.name);
     }
-    for (const creator of active) {
-      if (!creator.salesCalendarIds?.length) {
-        warn(
-          `${creator.key}: sales calendars`,
-          "none pinned, so NO booked calls will be counted for this creator. Run `npm run calendars` once bookings exist, then pin the sales calendar ids.",
-        );
-      }
+    if (!business.timezone) {
+      gap("Your ad account timezone", "not set. Days will be cut in the wrong place without it.");
+    }
+    if (!business.salesCalendarIds?.length) {
+      warn(
+        "Sales calendars",
+        "none set yet, so NO booked calls are being counted. Once a few bookings have come in, run `npm run calendars` and paste the sales ones in.",
+      );
+    } else {
+      ok("Sales calendars", `${business.salesCalendarIds.length} set`);
     }
   } catch (err) {
-    bad("adsv2.config.json", `is not valid JSON: ${err.message}`);
+    gap("Your settings file", `adsv2.config.json is not valid — usually a missing comma. ${err.message}`);
   }
 }
 
-// ── required environment ──────────────────────────────────────────────────
+// ── the things it cannot run without ──────────────────────────────────────
 const REQUIRED = [
-  ["NEXT_PUBLIC_SUPABASE_URL", "the database. Nothing works without it."],
-  ["SUPABASE_SERVICE_ROLE_KEY", "the database write key. Nothing works without it."],
-  ["AUTH_GOOGLE_ID", "sign-in. You cannot open the dashboard without it."],
-  ["AUTH_GOOGLE_SECRET", "sign-in. You cannot open the dashboard without it."],
-  ["AUTH_SECRET", "session signing. Generate with: openssl rand -base64 32"],
-  ["ALLOWED_EMAILS", "who is allowed in. With none set, nobody can sign in."],
+  ["APP_PASSWORD", "the password you type to open your dashboard. Without it nobody can get in, including you."],
+  ["AUTH_SECRET", "keeps your sign-in secure. Run `npm run setup` and it is made for you."],
+  ["NEXT_PUBLIC_SUPABASE_URL", "your database. Run `npm run db`."],
+  ["SUPABASE_SERVICE_ROLE_KEY", "your database key. Run `npm run db`."],
 ];
 for (const [name, why] of REQUIRED) {
   if (has(name)) ok(name);
-  else bad(name, why);
+  else gap(name, why);
 }
 
 const RECOMMENDED = [
-  ["CRON_SECRET", "without it the scheduled sync cannot authenticate and your numbers stop updating."],
-  ["WEBHOOK_SECRET", "without it the ManyChat and booking webhooks reject every delivery, so no DMs or bookings arrive."],
-  ["AUTH_URL", "needed in production so Google redirects back to the right host."],
+  ["CRON_SECRET", "without it the hourly update cannot run, so your numbers stop moving."],
+  ["WEBHOOK_SECRET", "without it ManyChat and your booking tool are turned away, so no DMs or calls arrive."],
 ];
 for (const [name, why] of RECOMMENDED) {
   if (has(name)) ok(name);
   else warn(name, why);
 }
 
-// ── Meta credentials, per creator ─────────────────────────────────────────
-if (config?.creators) {
-  for (const creator of config.creators.filter((x) => x.active !== false)) {
-    const account = (creator.adAccountEnv || []).find(has);
-    const token = (creator.tokenEnv || []).find(has);
-    if (account && token) {
-      ok(`${creator.key}: Meta credentials`, account);
-    } else {
-      bad(
-        `${creator.key}: Meta credentials`,
-        `set ${(creator.adAccountEnv || []).join(" or ")} and ${(creator.tokenEnv || []).join(" or ")}. Without both, this creator has no spend at all.`,
-      );
-    }
-  }
-}
-
-// ── sales sheet ───────────────────────────────────────────────────────────
-if (config?.salesSheet?.enabled) {
-  const idEnv = config.salesSheet.spreadsheetIdEnv || "GOOGLE_SHEETS_SPREADSHEET_ID";
-  if (has("GOOGLE_SHEETS_API_KEY") && has(idEnv)) ok("sales sheet");
-  else bad("sales sheet", `enabled in config but GOOGLE_SHEETS_API_KEY and/or ${idEnv} are missing. No revenue means no ROAS.`);
+// ── Meta ──────────────────────────────────────────────────────────────────
+const business = config?.business || {};
+const accountEnvs = business.adAccountEnv || ["META_AD_ACCOUNT"];
+const tokenEnvs = business.tokenEnv || ["META_ACCESS_TOKEN"];
+const account = accountEnvs.find(has);
+const token = tokenEnvs.find(has);
+if (account && token) {
+  ok("Meta connection", process.env[account]);
 } else {
-  warn("sales sheet", "disabled. You will see spend, DMs, booked calls and show rate — but no cash and no ROAS.");
+  gap(
+    "Meta connection",
+    `set ${accountEnvs.join(" or ")} and ${tokenEnvs.join(" or ")}. Without both there is no ad spend at all, and everything else is meaningless.`,
+  );
 }
 
-// ── database reachability and schema ──────────────────────────────────────
+// ── the sales sheet ───────────────────────────────────────────────────────
+const sheet = config?.salesSheet || {};
+if (!sheet.enabled) {
+  warn(
+    "Sales tracker",
+    "turned off. You will see spend, DMs, booked calls and show rate — but no money, and no ROAS. Turn on `salesSheet.enabled` in adsv2.config.json.",
+  );
+} else if (has("SHEET_URL")) {
+  const url = process.env.SHEET_URL;
+  if (/\/spreadsheets\/d\/e\/[^/]+\/pub/.test(url)) {
+    ok("Sales tracker", "connected by published link (one tab only)");
+  } else if (/\/spreadsheets\/d\/[a-zA-Z0-9-_]+/.test(url)) {
+    ok("Sales tracker", "connected by shared link");
+  } else {
+    gap("Sales tracker", "SHEET_URL does not look like a Google Sheets link. Paste the whole address from your browser.");
+  }
+} else if (has("GOOGLE_SHEETS_API_KEY") && has("GOOGLE_SHEETS_SPREADSHEET_ID")) {
+  ok("Sales tracker", "connected by API key");
+} else {
+  gap(
+    "Sales tracker",
+    "turned on but not connected. Share your sheet as 'anyone with the link can view' and paste the link into SHEET_URL.",
+  );
+}
+
+// ── is it actually online? ────────────────────────────────────────────────
+const authUrl = (process.env.AUTH_URL || "").trim();
+if (!authUrl || authUrl.includes("localhost")) {
+  warn(
+    "Online",
+    "not deployed yet. Right now this only works on your own computer, and the hourly update does not run. When you are ready: `npm run deploy`.",
+  );
+} else {
+  ok("Online", authUrl);
+}
+
+// ── the database itself ───────────────────────────────────────────────────
 const TABLES = [
   "ads_meta_insights_daily", "ads_keyword_events", "ghl_appointments", "sales_tracker_rows",
   "manychat_contact_links", "organic_keywords", "registry_keywords", "ad_creative_image",
@@ -148,7 +146,7 @@ const TABLES = [
 async function checkDatabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return;
+  if (!has("NEXT_PUBLIC_SUPABASE_URL") || !has("SUPABASE_SERVICE_ROLE_KEY")) return;
 
   const missing = [];
   for (const table of TABLES) {
@@ -157,45 +155,57 @@ async function checkDatabase() {
         headers: { apikey: key, Authorization: `Bearer ${key}` },
       });
       if (res.status === 404 || res.status === 400) missing.push(table);
-      else if (!res.ok) {
-        warn("database", `unexpected ${res.status} reading ${table}`);
+      else if (res.status === 401) {
+        gap("Database", "your key was refused. Run `npm run db` again to refresh it.");
         return;
       }
     } catch (err) {
-      bad("database", `unreachable: ${err.message}. Check NEXT_PUBLIC_SUPABASE_URL.`);
+      gap("Database", `cannot be reached: ${err.message}. Check NEXT_PUBLIC_SUPABASE_URL.`);
       return;
     }
   }
 
   if (missing.length === TABLES.length) {
-    bad("database schema", "no tables found. Run the two files in supabase/ against your project (npm run migrate).");
-  } else if (missing.length) {
-    bad("database schema", `${missing.length} table(s) missing: ${missing.join(", ")}. Re-run supabase/01_tables.sql.`);
+    gap("Database tables", "none built yet. Run `npm run db`.");
+    return;
+  }
+  if (missing.length) {
+    gap("Database tables", `${missing.length} missing. Run \`npm run db\` again — it is safe to repeat.`);
   } else {
-    ok("database schema", `all ${TABLES.length} tables present`);
+    ok("Database tables", `all ${TABLES.length} there`);
   }
 
-  // Row counts tell you whether data is actually flowing, which is a different
-  // question from whether the plumbing is connected.
+  // Tables existing and data arriving are different questions, and only the
+  // second one means the thing actually works.
+  const labels = {
+    ads_meta_insights_daily: "ad spend",
+    ads_keyword_events: "keyword DMs",
+    ghl_appointments: "booked calls",
+    sales_tracker_rows: "sales rows",
+  };
   const counts = {};
-  for (const table of ["ads_meta_insights_daily", "ads_keyword_events", "ghl_appointments", "sales_tracker_rows"]) {
+  for (const table of Object.keys(labels)) {
     if (missing.includes(table)) continue;
     try {
       const res = await fetch(`${url}/rest/v1/${table}?select=*&limit=1`, {
         headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: "count=exact", Range: "0-0" },
       });
-      counts[table] = res.headers.get("content-range")?.split("/")[1] ?? "?";
-    } catch { /* a count is a nice-to-have, never a reason to fail the check */ }
+      counts[labels[table]] = Number(res.headers.get("content-range")?.split("/")[1] ?? 0);
+    } catch {
+      /* a count is nice to have, never a reason to fail the check */
+    }
   }
-  if (Object.keys(counts).length) {
-    const empty = Object.entries(counts).filter(([, n]) => n === "0").map(([t]) => t);
-    const summary = Object.entries(counts).map(([t, n]) => `${t}=${n}`).join("  ");
-    if (empty.length === Object.keys(counts).length) {
-      warn("data", `every source table is empty. Run \`npm run sync\` once the credentials above are set.\n     ${summary}`);
+
+  const entries = Object.entries(counts);
+  if (entries.length) {
+    const empty = entries.filter(([, n]) => n === 0).map(([label]) => label);
+    const summary = entries.map(([label, n]) => `${label}: ${n}`).join("   ");
+    if (empty.length === entries.length) {
+      warn("Your data", `nothing has arrived yet. Run \`npm run sync\` once the gaps above are fixed.\n       ${summary}`);
     } else if (empty.length) {
-      warn("data", `no rows yet in: ${empty.join(", ")}\n     ${summary}`);
+      warn("Your data", `still nothing for ${empty.join(", ")}.\n       ${summary}`);
     } else {
-      ok("data", summary);
+      ok("Your data", summary);
     }
   }
 }
@@ -203,20 +213,21 @@ async function checkDatabase() {
 await checkDatabase();
 
 // ── report ────────────────────────────────────────────────────────────────
-console.log(`\n${c.bold("Ads V2 — setup check")}\n`);
+console.log(`\n${c.bold("Setup check")}\n`);
 for (const r of results) {
-  const mark = r.level === "ok" ? c.green("  ok ") : r.level === "warn" ? c.yellow("warn") : c.red(" gap");
-  console.log(`${mark}  ${r.what}${r.detail ? c.dim(` — ${r.detail}`) : ""}`);
+  const mark =
+    r.level === "ok" ? c.green("  ok  ") : r.level === "warn" ? c.yellow(" note ") : c.red(" todo ");
+  console.log(`${mark} ${r.what}${r.detail ? c.dim(` — ${r.detail}`) : ""}`);
 }
 
-const gaps = results.filter((r) => r.level === "bad");
-const warns = results.filter((r) => r.level === "warn");
+const gaps = results.filter((r) => r.level === "gap");
+const notes = results.filter((r) => r.level === "warn");
 console.log("");
 if (gaps.length) {
-  console.log(c.red(`${gaps.length} thing(s) still needed before this will work.`));
+  console.log(c.red(`${gaps.length} thing${gaps.length === 1 ? "" : "s"} still to do before this works.`));
   process.exitCode = 1;
-} else if (warns.length) {
-  console.log(c.yellow(`Ready to run. ${warns.length} optional thing(s) not set up — see the "warn" lines above.`));
+} else if (notes.length) {
+  console.log(c.yellow(`Working. ${notes.length} optional thing${notes.length === 1 ? "" : "s"} not set up — see the "note" lines.`));
 } else {
   console.log(c.green("Everything is set up."));
 }

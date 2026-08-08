@@ -10,8 +10,8 @@ alter a calculation.
 Every number is bucketed onto a **calendar day in one reporting timezone**, set by
 `reportingTimezone` in `adsv2.config.json` (default `America/New_York`).
 
-Meta reports each ad account on that account's *own* timezone. Left alone, a Sydney
-account and a Los Angeles account disagree about when Tuesday was, and a
+Meta reports an ad account on that account's *own* timezone, which may not be the
+one you think in. Left alone, that smears spend across day boundaries and a
 week-over-week comparison stops meaning anything.
 
 So an account that already reports in your reporting timezone is stored day-for-day.
@@ -33,11 +33,11 @@ Raw data is never overwritten, so a corrected rate re-flows everywhere and stays
 auditable.
 
 **Sales money is never converted. Ever.** The sales tracker is one sheet, written in
-one currency, for every creator. The `currency` field on a creator describes their
-Meta *billing*, and applies to spend and budgets only.
+one currency. The `currency` field describes what Meta *bills the ad account* in,
+and applies to spend and budgets only.
 
-This is not a style preference. Applying a creator's ad-account currency to their
-sales once turned a $1,200 sale into $842, and nothing looked broken — a
+This is not a style preference. Applying an ad account's currency to the sales in
+the tracker once turned a $1,200 sale into $842, and nothing looked broken — a
 slightly-too-small number is indistinguishable from a real one.
 
 **Collected vs contracted.** Collected is cash in the bank. Contracted is the value
@@ -70,7 +70,7 @@ assigned to the most plausible keyword.
 
 In passes, each writing its own evidence into the row:
 
-- **former creator** — the DM came from an ad, but from someone no longer active
+- **retired ad** — the DM came from an ad that is no longer being run
 - **single pre-sale keyword** — this buyer only ever typed one keyword before
   buying, so it is the only possibility, not a guess
 - **human resolution** — a person decided; this outranks every computed answer and
@@ -103,8 +103,7 @@ reschedules twice is one booked call, not three.
 counted as due. A booking scheduled for next week is not a no-show, and letting it
 drag the rate down makes the number useless exactly when you are scaling.
 
-**Which calendars count** is set per creator in `salesCalendarIds`. Only sales
-calls. Onboarding calls, coaching calls and reschedule calendars are not bookings.
+**Which calendars count** is set in `salesCalendarIds`. Only sales calls. Onboarding calls, coaching calls and reschedule calendars are not bookings.
 
 Watch for near-duplicate calendars — same name, different id. CRMs produce these
 constantly and bookings split silently between them, which shows up as a booked

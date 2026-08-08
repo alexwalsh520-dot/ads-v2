@@ -21,7 +21,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
-import { creatorKeyFromText, isCreatorKey } from "@/lib/creators";
+import { BUSINESS } from "@/lib/creators";
 import { clientForSalesCalendar } from "@/lib/ads-v2/config";
 import {
   displayKeyword,
@@ -84,14 +84,12 @@ export async function POST(req: NextRequest) {
   const calendarId = pick(payload, ["calendar_id", "calendarId", "calendar"]);
   const calendarName = pick(payload, ["calendar_name", "calendarName", "event_title", "title"]);
 
-  // Which creator this booking belongs to, best evidence first: the calendar id
-  // you pinned in the config beats any name matching, because a pinned id is a
-  // decision someone made and a name match is a guess that happened to work.
-  const clientRaw = pick(payload, ["client", "client_key", "creator", "assigned_to_creator"]);
-  const clientKey =
-    (calendarId ? clientForSalesCalendar(calendarId) : null) ??
-    (isCreatorKey(clientRaw) ? clientRaw : null) ??
-    creatorKeyFromText(clientRaw, calendarName, pick(payload, ["tags", "source", "offer"]));
+  const clientKey = BUSINESS.key;
+
+  // Whether this booking is a SALES call is decided by the calendar it landed
+  // on, against the ids pinned in your config. Bookings on any other calendar
+  // are still recorded here — they simply are not counted as sales calls.
+  const isSalesCall = calendarId ? clientForSalesCalendar(calendarId) !== null : false;
 
   const keywordRaw =
     pick(payload, ["keyword", "Keyword", "utm_content"]) ?? extractKeywordFromPayload(payload);
@@ -152,7 +150,7 @@ export async function POST(req: NextRequest) {
     linked = !linkError;
   }
 
-  return NextResponse.json({ ok: true, appointmentId, clientKey, keyword, linked });
+  return NextResponse.json({ ok: true, appointmentId, keyword, linked, isSalesCall });
 }
 
 export async function GET(req: NextRequest) {

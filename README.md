@@ -1,90 +1,118 @@
-# Ads V2
+# Ads
 
-One table that tells you what every ad actually returned — spend, DMs, booked calls,
-calls taken, sales, cash — for any date window.
+**One table that shows you what every ad actually gave back.**
 
-Built for DM-funnel Meta advertising: an ad tells someone to send a keyword, they
-DM it, a setter books them, a closer sells them. Ads Manager can tell you what you
-spent. This tells you what came back.
+Money spent → DMs → booked calls → calls that happened → sales → cash. For any date
+range. Per ad.
+
+Facebook can tell you what you spent. It cannot tell you what came back. This does.
 
 ---
 
-## The fastest way to install this
+## Who this is for
 
-Open this folder in [Claude Code](https://claude.com/claude-code) and say:
+You run Meta ads that tell people to send a word in the DMs. They message you, they
+book a call, some of them buy. Right now you cannot tell which ad produced the
+people who bought — so you're guessing which ones to turn off.
 
-> Install this.
+This stops the guessing.
 
-`CLAUDE.md` tells it everything else. It will do the setup, ask you for the handful
-of things that need a human in a browser, wire it up, and check it works.
+---
 
-**Prefer to do it yourself?** `docs/SOP.md` is the step-by-step version, about 45
-minutes start to finish.
+## Setting it up
+
+**Open this folder in [Claude Code](https://claude.com/claude-code) and say "install this."**
+
+It asks you a few questions about your business, then does the rest. You'll need to
+copy three tokens from three websites, paste two links into ManyChat and your
+booking tool, and pick a password. That's your whole job.
+
+About 45 minutes, most of it waiting for accounts to create.
+
+**[The full setup guide is here →](docs/Ads-Setup-Guide.pdf)** — written for
+someone who has never opened a terminal.
+
+Doing it yourself instead:
+
+```bash
+npm install
+npm run setup     # makes your settings file and your password
+npm run db        # creates your database
+npm run deploy    # puts it on the internet
+npm run doctor    # tells you what's still missing
+```
+
+`npm run doctor` is the one to remember. Run it whenever something looks wrong. It
+checks everything and every problem it finds comes with what to do about it.
+
+---
+
+## Where does it live?
+
+On the internet, at your own address — something like `your-name.vercel.app`. You
+sign in with a password. It works on your phone.
+
+It updates itself every hour, whether your computer is on or not.
+
+You can also run it on your own computer while you're setting up (`npm run dev`),
+but that only works while your computer is on and that window is open, and the
+hourly update doesn't happen. That's for testing. Deploying is the real thing.
+
+Hosting is free at the size you need. So is the database.
+
+---
+
+## The two rules that make it work
+
+**1. The keyword goes at the end of the ad's name.**
+
+Your ad tells people to DM a word. That same word has to be the last word of the
+ad's name in Ads Manager.
+
+```
+Ad says "DM me TRIM"   →   name the ad:   Vet ICP | Direct CTA | TRIM
+```
+
+That word is the entire connection between money going out and DMs coming in. An ad
+named without it still shows its spend — it just sits there with zeros next to it
+forever, because nothing can tie it to anything.
+
+**2. Never run two ads with the same keyword at the same time.**
+
+One live ad, one word. If two ads both say DM me TRIM, nothing on earth can tell you
+which one produced the sale.
+
+Using a word again later is fine. Just wait a few weeks after turning the first one
+off, so a straggler DM doesn't get credited to the wrong ad.
+
+---
+
+## What it won't do
+
+**It won't guess.** If it can't prove a sale came from a particular ad, it shows as
+*unattributed* instead of being quietly assigned to whichever ad looks likeliest.
+
+That's on purpose. Unattributed money you can see is a problem you can go and fix.
+Money silently credited to the wrong ad is a decision you'll get wrong and never
+find out about.
+
+Hover any number to see what it was built from.
 
 ---
 
 ## What you need
 
-| | | |
-| --- | --- | --- |
-| Supabase | free tier is fine | the database |
-| Vercel | free tier is fine | hosting and the scheduled sync |
-| A Google account | | sign-in |
-| A Meta ad account per creator | | the spend |
-| ManyChat, or anything that can POST a webhook | | the DMs |
-| A booking CRM that can POST a webhook | GoHighLevel, Calendly, … | the calls |
-| A sales tracker in Google Sheets | optional | the cash, and therefore ROAS |
+| | |
+| --- | --- |
+| A Meta ad account | the spend |
+| ManyChat, or anything that can send a webhook | the DMs |
+| A booking tool — GoHighLevel, Calendly, whatever | the calls |
+| A Google Sheet of your sales calls | the money. Optional, but no ROAS without it |
+| A free Supabase account | where the numbers get stored |
+| A free Vercel account | where the website lives |
 
 Without the sales sheet you still get spend, DMs, booked calls and show rate. You
-do not get revenue or ROAS.
-
----
-
-## Install
-
-```bash
-npm install
-npm run setup      # writes .env.local, generates your secrets
-# fill in .env.local and adsv2.config.json  (see docs/SOP.md)
-npm run migrate    # creates the database schema
-npm run doctor     # tells you exactly what is still missing
-npm run dev
-```
-
-`npm run doctor` is the one to remember. Run it whenever anything looks wrong; it
-checks your config, your environment, your schema and your data, and every failure
-says what to do about it.
-
----
-
-## The one rule that makes it work
-
-**The keyword goes at the end of the ad name.**
-
-```
-TEST | Direct CTA | TRIM      →  trim
-Q3 Scaling (PRIMED)           →  primed
-Lead Magnet | 50 | Tempo      →  tempo
-```
-
-That word is the entire join between money spent and DMs received. Name an ad
-without it and the spend still records, but it can never be credited to a DM, a
-call, or a sale.
-
-A keyword must also be unique across every creator while it is live. Two people
-running the same word at once makes it impossible to say whose ad a DM came from.
-
----
-
-## What it will not do
-
-It will not guess. If a sale cannot be connected to an ad, it shows as
-unattributed rather than being assigned to the most likely candidate. Unattributed
-revenue you can see is a problem you can fix; revenue quietly credited to the wrong
-ad is a decision you will make wrongly and never know it.
-
-Everything the dashboard shows carries its evidence. Hover a number to see what it
-was built from.
+don't get revenue, and you don't get ROAS.
 
 ---
 
@@ -92,19 +120,19 @@ was built from.
 
 | | |
 | --- | --- |
-| `npm run doctor` | what is set up, what is not, and what each gap costs you |
-| `npm run migrate` | create or update the database schema |
-| `npm run sync` | pull everything in right now, without waiting for the cron |
-| `npm run calendars` | list the booking calendars in your data, so you can pin the sales ones |
-| `npm test` | the unit tests |
+| `npm run doctor` | what's set up, what isn't, and what each gap costs you |
+| `npm run db` | create the database and build the tables |
+| `npm run deploy` | put it online (or push new settings) |
+| `npm run sync` | pull everything in right now, without waiting for the hour |
+| `npm run calendars` | list your booking calendars so you can mark the sales ones |
 
 ---
 
-## Documentation
+## Docs
 
-- **`docs/SOP.md`** — the setup guide, for a human
-- **`docs/DATA-RULES.md`** — what every number means and when it is allowed to change
-- **`CLAUDE.md`** — how an AI assistant should install and maintain this
+- **[Setup guide (PDF)](docs/Ads-Setup-Guide.pdf)** — what this is, and every step, for a human
+- **[DATA-RULES.md](docs/DATA-RULES.md)** — what every number means and when it's allowed to change
+- **[CLAUDE.md](CLAUDE.md)** — how an AI assistant should install and look after this
 
 ---
 
@@ -112,9 +140,9 @@ was built from.
 
 ```
 src/lib/ads-v2/       the engine — facts.ts decides what everything means
-src/lib/ingest/       pulling data in (Meta spend, sales sheet, FX rates)
-src/app/api/webhooks/ pushes in (ManyChat keyword DMs, bookings)
-src/app/ads-v2/       the UI
-supabase/             the schema, in two idempotent files
-scripts/              doctor, migrate, sync, calendars
+src/lib/ingest/       pulling data in (Meta spend, your sheet, currency rates)
+src/app/api/webhooks/ things pushed at us (keyword DMs, bookings)
+src/app/ads-v2/       the dashboard
+supabase/             the database, in two files. Safe to re-run
+scripts/              setup, db, deploy, doctor, calendars
 ```

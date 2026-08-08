@@ -9,26 +9,16 @@
 // silently breaks booking numbers when it is wrong, and you cannot guess the
 // ids. Look at this list and pin the ones that are genuinely SALES calls.
 //
-// WATCH FOR NEAR-DUPLICATES. CRMs make it easy to end up with "Strategy
-// Session (TS)" and "Strategy Session - (TS)" side by side, and bookings quietly
-// split between them. If your booked count looks low, that is the first thing
-// to check. Pin every id that is really a sales call, duplicates included.
+// WATCH FOR NEAR-DUPLICATES. Booking tools make it very easy to end up with
+// "Strategy Call" and "Strategy Call " side by side, as two different
+// calendars, with your bookings quietly split between them. If your booked
+// count looks too low, that is the first thing to check. Pin every id that is
+// really a sales call, duplicates included.
 // ─────────────────────────────────────────────────────────────────────────
 
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { loadEnv } from "./lib/env-file.mjs";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-
-for (const file of [".env.local", ".env"]) {
-  const p = path.join(ROOT, file);
-  if (!existsSync(p)) continue;
-  for (const line of readFileSync(p, "utf8").split("\n")) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
-    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
-  }
-}
+loadEnv();
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -68,10 +58,9 @@ const list = [...byId.values()].sort((a, b) => b.count - a.count);
 console.log(`\nCalendars found in ${rows.length} recent bookings:\n`);
 for (const entry of list) {
   const name = [...entry.names].join(" / ") || "(unnamed)";
-  const clients = [...entry.clients].join(", ") || "unassigned";
-  console.log(`  ${String(entry.count).padStart(5)}  ${entry.id}`);
+  console.log(`  ${String(entry.count).padStart(5)} bookings   ${entry.id}`);
   console.log(`         ${name}`);
-  console.log(`         creator: ${clients}   latest: ${entry.latest.slice(0, 10) || "?"}\n`);
+  console.log(`         most recent: ${entry.latest.slice(0, 10) || "unknown"}\n`);
 }
 
 // Flag likely duplicates by name similarity, since that is the failure mode
@@ -92,4 +81,12 @@ if (dupes.length) {
   console.log("If both are really sales calls, pin BOTH ids or you will undercount bookings.\n");
 }
 
-console.log('Add the sales ones to "salesCalendarIds" for the right creator in adsv2.config.json.\n');
+console.log(`Copy the ids of the calendars you use for SALES calls into
+"salesCalendarIds" in adsv2.config.json, like this:
+
+  "salesCalendarIds": ["${list[0].id}"]
+
+Do NOT include onboarding calls, coaching calls, or reschedule calendars.
+Those are real bookings, but they are not sales calls, and counting them
+would make your booking numbers look better than they are.
+`);

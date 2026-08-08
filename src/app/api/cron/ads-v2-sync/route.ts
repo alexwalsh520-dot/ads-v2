@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { isCronAuthorized } from "@/lib/cron-auth";
 import { runAdsV2Sync } from "@/lib/ads-v2/sync";
 
 // Background sync: budget snapshot -> facts pass -> version bump -> precompute.
@@ -8,11 +8,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get("authorization")?.replace("Bearer ", "");
-  const isCron = secret === process.env.CRON_SECRET;
-  // Also allow a signed-in admin to trigger a manual run from the app.
-  const session = isCron ? null : await auth();
-  if (!isCron && !session?.user) {
+  // The scheduler with the shared secret, or a signed-in human forcing a run.
+  if (!(await isCronAuthorized(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {

@@ -11,20 +11,9 @@
 //     npm run sync -- --url=https://your-app.vercel.app
 // ─────────────────────────────────────────────────────────────────────────
 
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { loadEnv } from "./lib/env-file.mjs";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-
-for (const file of [".env.local", ".env"]) {
-  const p = path.join(ROOT, file);
-  if (!existsSync(p)) continue;
-  for (const line of readFileSync(p, "utf8").split("\n")) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
-    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
-  }
-}
+loadEnv();
 
 const args = Object.fromEntries(
   process.argv.slice(2).map((a) => {

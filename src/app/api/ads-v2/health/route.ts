@@ -10,15 +10,14 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { isSignedIn } from "@/auth";
 import { getServiceSupabase } from "@/lib/supabase";
 import { STALE_HOURS } from "@/lib/ads-v2/config";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isSignedIn())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = getServiceSupabase();
   const since = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);

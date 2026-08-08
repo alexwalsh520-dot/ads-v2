@@ -10,16 +10,17 @@
     "lint": "eslint",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "setup": "node scripts/setup.mjs",
+    "db": "node scripts/setup-database.mjs",
+    "deploy": "node scripts/deploy.mjs",
     "doctor": "node scripts/doctor.mjs",
-    "migrate": "node scripts/migrate.mjs",
     "calendars": "node scripts/list-calendars.mjs",
-    "sync": "node scripts/sync.mjs"
+    "sync": "node scripts/sync.mjs",
+    "pdf": "python3 scripts/make-guide-pdf.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
-    "next-auth": "^5.0.0-beta.30",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },

@@ -47,19 +47,13 @@ a {
 
 .signin-card {
   width: 100%;
-  max-width: 380px;
+  max-width: 360px;
   padding: 32px;
   border: 1px solid #1f1f1f;
   border-radius: 12px;
   background: #111111;
   color: #e8e8e8;
   text-align: center;
-}
-
-html.light .signin-card {
-  border-color: #e2e2dd;
-  background: #ffffff;
-  color: #1a1a18;
 }
 
 .signin-card h1 {
@@ -69,10 +63,26 @@ html.light .signin-card {
 }
 
 .signin-card p {
-  margin: 0 0 24px;
+  margin: 0 0 20px;
   font-size: 14px;
   line-height: 1.5;
   color: #a8a8a8;
+}
+
+.signin-input {
+  width: 100%;
+  padding: 11px 14px;
+  margin-bottom: 12px;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  background: #0d0d0d;
+  color: #f4f4f4;
+  font-size: 15px;
+}
+
+.signin-input:focus {
+  outline: none;
+  border-color: #3a3a3a;
 }
 
 .signin-button {
@@ -91,14 +101,27 @@ html.light .signin-card {
   background: #222222;
 }
 
+.signin-error {
+  margin: 16px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #f87171;
+}
+
+html.light .signin-card {
+  border-color: #e2e2dd;
+  background: #ffffff;
+  color: #1a1a18;
+}
+
+html.light .signin-input {
+  border-color: #d8d8d2;
+  background: #ffffff;
+  color: #1a1a18;
+}
+
 html.light .signin-button {
   border-color: #d8d8d2;
   background: #f2f2ee;
   color: #1a1a18;
-}
-
-.signin-error {
-  margin-top: 16px;
-  font-size: 13px;
-  color: #f87171;
 }

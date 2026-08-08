@@ -1,41 +1,53 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────
-// SETUP — gets the boring files into place and generates the secrets that
-// nobody should be inventing by hand.
+// FIRST-RUN SETUP — puts the boring files in place and makes up the random
+// passwords so nobody has to invent one.
 //
 //     npm run setup
 //
-// It never overwrites anything you already have, and it never asks you a
-// question it can answer itself. What it cannot do is create your Supabase
-// project or your Google OAuth client — those need a human in a browser, and
-// docs/SOP.md walks through them.
+// It never overwrites anything you already filled in.
 // ─────────────────────────────────────────────────────────────────────────
 
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { ENV_PATH, ROOT, c } from "./lib/env-file.mjs";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const done = [];
 const skipped = [];
 
 // ── .env.local ────────────────────────────────────────────────────────────
-const envPath = path.join(ROOT, ".env.local");
-if (existsSync(envPath)) {
-  skipped.push(".env.local already exists — left untouched");
+if (existsSync(ENV_PATH)) {
+  skipped.push(".env.local already exists, so it was left alone");
 } else {
-  copyFileSync(path.join(ROOT, ".env.example"), envPath);
-  done.push("created .env.local from .env.example");
+  copyFileSync(path.join(ROOT, ".env.example"), ENV_PATH);
+  done.push("made .env.local");
 }
 
-// Fill in the three secrets that are pure randomness. Only ever writes into a
-// blank value, so re-running cannot rotate a secret out from under a live
-// deployment — that would sign every existing session out.
-let env = readFileSync(envPath, "utf8");
+// Fill in the values that are pure randomness. Only ever writes into a BLANK
+// value, so running this again cannot rotate a secret out from under a live
+// site — which would sign everyone out and break the hourly update.
+let env = readFileSync(ENV_PATH, "utf8");
 const generated = [];
+
+// A readable passphrase rather than random noise: a password someone can
+// actually retype on their phone is a password they will not write on a
+// sticky note.
+const WORDS = [
+  "anchor", "basket", "canyon", "cedar", "copper", "delta", "ember", "falcon",
+  "granite", "harbor", "indigo", "juniper", "kestrel", "lantern", "meadow",
+  "nickel", "orchard", "pebble", "quartz", "ribbon", "saddle", "timber",
+  "umber", "velvet", "walnut", "yarrow",
+];
+function passphrase() {
+  const pick = () => WORDS[randomBytes(1)[0] % WORDS.length];
+  const digits = String(1000 + (randomBytes(2).readUInt16BE(0) % 9000));
+  return `${pick()}-${pick()}-${pick()}-${digits}`;
+}
+
 for (const [key, make] of [
-  ["AUTH_SECRET", () => randomBytes(32).toString("base64")],
+  ["APP_PASSWORD", passphrase],
+  ["AUTH_SECRET", () => randomBytes(32).toString("base64url")],
   ["CRON_SECRET", () => randomBytes(32).toString("hex")],
   ["WEBHOOK_SECRET", () => randomBytes(32).toString("hex")],
 ]) {
@@ -46,35 +58,40 @@ for (const [key, make] of [
   }
 }
 if (generated.length) {
-  writeFileSync(envPath, env);
-  done.push(`generated ${generated.join(", ")}`);
+  writeFileSync(ENV_PATH, env);
+  done.push(`made up ${generated.join(", ")}`);
 }
 
 // ── adsv2.config.json ─────────────────────────────────────────────────────
 const configPath = path.join(ROOT, "adsv2.config.json");
 const examplePath = path.join(ROOT, "adsv2.config.example.json");
 if (existsSync(configPath)) {
-  skipped.push("adsv2.config.json already exists — left untouched");
+  skipped.push("adsv2.config.json already exists, so it was left alone");
 } else if (existsSync(examplePath)) {
   copyFileSync(examplePath, configPath);
-  done.push("created adsv2.config.json from the example");
+  done.push("made adsv2.config.json");
 }
 
+const password = (readFileSync(ENV_PATH, "utf8").match(/^APP_PASSWORD=(.*)$/m) || [])[1];
+
 console.log("\nSetup\n");
-for (const line of done) console.log(`  done   ${line}`);
-for (const line of skipped) console.log(`  skip   ${line}`);
+for (const line of done) console.log(`  ${c.green("done")}  ${line}`);
+for (const line of skipped) console.log(`  ${c.dim("skip")}  ${c.dim(line)}`);
+
+if (password) {
+  console.log(`
+  ${c.bold("Your dashboard password is:")}  ${c.bold(password)}
+
+  Write it down. You can change it any time by editing APP_PASSWORD
+  in .env.local (and in your hosting settings, once you are online).`);
+}
 
 console.log(`
-Still needs a human (a browser and about 20 minutes) — see docs/SOP.md:
+Next:
 
-  1. Create a Supabase project, put its three keys in .env.local
-  2. Create a Google OAuth client, put its two keys in .env.local
-  3. Create a Meta System User token per creator, put it in .env.local
-  4. Describe your creators in adsv2.config.json
+  ${c.bold("npm run db")}       make the database        (needs a Supabase token)
+  ${c.bold("npm run doctor")}   see what is still missing
+  ${c.bold("npm run deploy")}   put it on the internet   (needs a Vercel token)
 
-Then:
-
-  npm run migrate     create the database schema
-  npm run doctor      check what is still missing
-  npm run dev         open http://localhost:3000
+Not sure? Open this folder in Claude and say "install this".
 `);

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import SessionWrapper from "@/components/SessionWrapper";
 
 export const metadata: Metadata = {
   title: "Ads",
@@ -25,9 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body>
-        <SessionWrapper>{children}</SessionWrapper>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

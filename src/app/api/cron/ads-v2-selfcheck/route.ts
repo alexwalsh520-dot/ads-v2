@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { isCronAuthorized } from "@/lib/cron-auth";
 import { runSelfCheck } from "@/lib/ads-v2/selfcheck";
 
 // Nightly accuracy gates: reconciliation drift, cross-window invariants, and
@@ -8,10 +8,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get("authorization")?.replace("Bearer ", "");
-  const isCron = secret === process.env.CRON_SECRET;
-  const session = isCron ? null : await auth();
-  if (!isCron && !session?.user) {
+  if (!(await isCronAuthorized(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {

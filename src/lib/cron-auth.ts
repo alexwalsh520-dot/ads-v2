@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { auth } from "@/auth";
+import { isSignedIn } from "@/auth";
 
 /**
  * A cron endpoint is callable two ways: by the scheduler with the shared
@@ -16,6 +16,5 @@ export async function isCronAuthorized(req: NextRequest): Promise<boolean> {
     if (header === secret) return true;
     if (req.headers.get("x-cron-secret") === secret) return true;
   }
-  const session = await auth();
-  return !!session?.user;
+  return isSignedIn();
 }

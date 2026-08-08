@@ -7,9 +7,10 @@
 //
 //     POST https://<your-app>/api/webhooks/manychat?secret=<WEBHOOK_SECRET>
 //
-// and send a JSON body containing at minimum the creator, the keyword, and the
-// subscriber id. Field names are flexible (see pick() below) because ManyChat
-// lets you name custom fields whatever you like.
+// and send a JSON body with two things: the keyword, and the subscriber id.
+// That is all. There is one business, so there is nothing to say about whose
+// DM it is. Field names are flexible (see pick() below) because ManyChat lets
+// you name custom fields whatever you like.
 //
 // Idempotent: the same event delivered twice updates one row rather than
 // inventing a second DM. Webhooks retry, and a duplicated DM is a permanently
@@ -18,7 +19,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
-import { creatorKeyFromText, isCreatorKey } from "@/lib/creators";
+import { BUSINESS } from "@/lib/creators";
 import { displayKeyword, normalizeKeyword } from "@/lib/ads-tracker/normalize";
 
 export const dynamic = "force-dynamic";
@@ -76,20 +77,15 @@ export async function POST(req: NextRequest) {
     "subscriber_id", "subscriberId", "id", "user_id", "manychat_id", "contact_id",
   ]);
 
-  const clientRaw = pick(payload, ["client", "client_key", "creator", "account", "page_name"]);
-  const clientKey = isCreatorKey(clientRaw)
-    ? clientRaw
-    : creatorKeyFromText(clientRaw, pick(payload, ["page_name", "ig_username", "offer"]));
+  const clientKey = BUSINESS.key;
 
-  // All three are required. A DM with no keyword cannot be tied to an ad; with
-  // no subscriber it cannot be tied to the booking it later produces; with no
-  // creator it cannot be tied to anyone's ad account. Guessing any of them
-  // creates a number that looks real and is not, so refuse instead — a 400 is
-  // visible in ManyChat's own delivery log, where someone will actually see it.
+  // Both are required. A DM with no keyword cannot be tied to an ad; with no
+  // subscriber it cannot be tied to the booking it later produces. Guessing
+  // either one creates a number that looks real and is not, so refuse instead.
+  // A 400 shows up in ManyChat's own delivery log, where someone will see it.
   const missing: string[] = [];
   if (!keyword) missing.push("keyword");
   if (!subscriberId) missing.push("subscriber_id");
-  if (!clientKey) missing.push("client (no configured creator matched)");
   if (missing.length) {
     return NextResponse.json(
       { error: `missing or unrecognised: ${missing.join(", ")}`, received: Object.keys(payload) },
@@ -138,6 +134,6 @@ export async function GET(req: NextRequest) {
     ok: true,
     endpoint: "manychat keyword webhook",
     authorized: authorized(req),
-    expects: ["keyword", "subscriber_id", "client"],
+    expects: ["keyword", "subscriber_id"],
   });
 }

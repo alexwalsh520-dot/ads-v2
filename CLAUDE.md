@@ -1,211 +1,294 @@
 # Instructions for Claude
 
-You are installing **Ads V2** for the person you are talking to. This file tells you
-how. Read it fully before you start.
+You are setting this up for a **fitness coach who runs their own business**. Assume
+they are not technical. Assume they have never used a terminal. Assume that if you
+ask them a question containing a word like "environment variable" or "webhook
+payload", they will not know the answer and will feel stupid, and you will have
+made the tool worse.
 
-Your job is to do everything that does not require a human in a browser, tell them
-plainly what is left, and then verify it works. Do not hand back a half-installed
-app with a list of homework.
+Your job: **do everything except the parts that genuinely need a human in a
+browser.** Ask for those in plain words, all at once, and handle the rest.
+
+Do not hand back a half-finished setup with a list of homework.
 
 ---
 
 ## What this is
 
-One table. Every ad keyword, and what it actually returned: spend → DMs → booked
-calls → calls taken → sales → cash. Plus ROAS, cost per DM, cost per booked call,
-and show rate, over any date window.
+One table. Every ad, and what it actually gave back: money spent → DMs → booked
+calls → calls that happened → sales → cash. Plus cost per DM, cost per booked
+call, show rate, and ROAS, over any date range.
 
-It is opinionated about one thing: **it will not guess.** A number it cannot prove
-shows as unattributed rather than being quietly assigned to something plausible.
-Keep that property. It is the reason the tool is trusted.
+It is opinionated about one thing: **it does not guess.** If it cannot prove a sale
+came from a particular ad, it says so instead of quietly picking the most likely
+one. Keep that. It is the only reason the numbers are worth looking at.
 
 ---
 
-## The install, in order
+## PHASE 1 — Interview them first
 
-Work through these. After each step that touches config or environment, run
-`npm run doctor` — it is the source of truth for what is still missing.
+**Do this before you touch a single file.** The whole point is that the finished
+dashboard fits *their* business. You cannot know that from the code.
 
-### 1. Dependencies and scaffolding
+Ask these in ONE message, numbered, in plain language. Tell them to answer what
+they can and say "not sure" to the rest — you will work the rest out.
+
+1. **What is your business called?** (just for the top of the dashboard)
+2. **Do you run Meta ads yourself, or does someone run them for you?**
+3. **What timezone does your Meta ad account bill in?** If they do not know: tell
+   them to open Ads Manager → Billing, or just say "not sure" and you will use
+   their local timezone.
+4. **What do you use for your Instagram DMs?** (Expect ManyChat. If something
+   else, ask whether it can send a webhook — most can.)
+5. **What do you use to book calls?** (GoHighLevel, Calendly, something else)
+6. **Do you keep a spreadsheet of your sales calls?** If yes, ask them to **paste
+   the header row** — the very top row of the sheet, with the column names. This
+   is the single most useful thing they can give you.
+7. **Does anyone else set appointments for you, or is it just you?**
+8. **What are your ads called right now in Ads Manager?** Ask for two or three
+   real examples. You need this for Phase 2.
+
+### Then explain what they just told you
+
+Before moving on, tell them in three or four sentences what you are about to build
+**using their own words back at them**. For example:
+
+> So: your ads tell people to DM you a word. ManyChat catches that word. They book
+> into your Strategy Call calendar in GoHighLevel, and you write the result in your
+> "Sales Tracker" sheet. I'm going to connect all four of those so you can see
+> which ad produced which sale. Sound right?
+
+If they say it is not right, fix your understanding before continuing. A setup
+built on a wrong picture will produce numbers that look fine and are wrong.
+
+---
+
+## PHASE 2 — Teach the two rules, before anything is built
+
+These are not optional and they are not technical. If they do not do these, the
+dashboard will be blank and they will think it is broken.
+
+### Rule 1 — the keyword goes at the END of the ad's name
+
+Their ad already tells people to send a word. That word has to also be the last
+word of the ad's name in Ads Manager.
+
+```
+Ad tells people to DM:  TRIM
+Ad must be named:       anything you like | TRIM
+```
+
+Look at the real ad names they gave you in question 8, and **rewrite them into
+correct ones, in the chat, with their actual keywords.** Do not explain it in the
+abstract. Show them their own ads, fixed.
+
+Tell them plainly what happens if they do not: the money still shows up, but that
+ad can never be credited with a single DM, call, or sale. It sits at the top of
+the list spending money with zeros next to it.
+
+### Rule 2 — never use the same keyword twice at the same time
+
+One live ad, one word. If two ads both say DM me TRIM, nothing can tell you which
+one produced the sale.
+
+Reusing a word later is fine — leave a few weeks after you turn the first one off.
+
+### If they have a sales tracker, there is a third rule
+
+Whoever takes the call has to fill in the "did they show up" column and the "how
+much did they pay" column. The dashboard reads those. Nobody filling them in means
+no show rate and no revenue, and there is nothing the software can do about it.
+
+---
+
+## PHASE 3 — Build it
+
+Now do the work. In this order.
 
 ```
 npm install
 npm run setup
 ```
 
-`npm run setup` creates `.env.local` from the example and generates `AUTH_SECRET`,
-`CRON_SECRET` and `WEBHOOK_SECRET`. It never overwrites an existing value.
+`npm run setup` writes their settings file and makes up their password. **Tell them
+the password it printed and tell them to write it down.**
 
-### 2. Things only the human can do
+### Write their config from the interview
 
-You cannot create accounts, click OAuth consent screens, or generate Meta tokens.
-Ask for these, all at once, in one short message — not one at a time:
+Edit `adsv2.config.json`:
 
-| What you need | Where they get it |
-| --- | --- |
-| Supabase URL + anon key + service role key | supabase.com → new project → Settings → API |
-| Google OAuth client id + secret | console.cloud.google.com → APIs & Services → Credentials → OAuth client ID (Web application) |
-| Meta ad account id + access token, per creator | See `docs/SOP.md` §3 — a **System User** token, so it does not expire |
-| Google Sheets API key + spreadsheet id | Only if they want revenue and ROAS |
+- `business.name` — from question 1
+- `business.timezone` — from question 3
+- `business.currency` — whatever Meta charges them in
+- `salesSheet` — set `enabled: true` if they have a sheet, and **map `columns` from
+  the header row they pasted in question 6.** Column letters, counting from A. Only
+  `date` and `prospectName` are required. Map `manychatLink` if any column holds a
+  ManyChat link — it is worth more than all the others combined.
+- Leave `salesCalendarIds` empty. You fill it in at Phase 5.
 
-`docs/SOP.md` is the human-readable version of this table with screenshots-worth of
-detail. Point them at it rather than re-explaining it in chat.
+If their sheet has one tab per month, set `tabs: "monthly"` and match
+`monthTabFormat` to how they actually name the tabs.
 
-**The Google OAuth redirect URI must be exactly:**
-```
-http://localhost:3000/api/auth/callback/google
-https://THEIR-DOMAIN/api/auth/callback/google
-```
-A trailing slash breaks it. This is the single most common install failure.
+### Things only they can get
 
-### 3. Write `adsv2.config.json`
+Ask for these in one message, with the exact link for each:
 
-Replace the `example` creator. One entry per person they run ads for. Ask them for:
+| What | Where | Why it matters |
+| --- | --- | --- |
+| Supabase access token | supabase.com/dashboard/account/tokens → Generate new token | This is where their numbers get stored |
+| Meta ad account id + access token | See `docs/SETUP.md` §Meta | Without it there is no ad spend at all |
+| Vercel token | vercel.com/account/tokens → Create Token | This is what puts it on the internet |
+| Their sales sheet link | Share → anyone with the link → Viewer, then copy the address | This is where money comes from |
 
-- a short key (lowercase, no spaces, never changed once data exists)
-- the display name
-- **the ad account's reporting timezone in Meta** — not where the person lives.
-  A Sydney-based coach whose ad account reports on Sydney time gets
-  `Australia/Sydney`, and the ingester re-cuts their days for you.
-- the currency Meta *bills that ad account* in, if not USD
-
-Leave `salesCalendarIds` empty for now. You fill it in at step 6.
-
-### 4. Create the schema
+Then:
 
 ```
-npm run migrate
+npm run db        # creates their database and builds the tables
+npm run deploy    # puts it online, gives them a real web address
+npm run doctor    # tells you both what is left
 ```
 
-If that prints instructions instead of running, the human needs to paste
-`supabase/01_tables.sql` then `supabase/02_functions.sql` into the Supabase SQL
-editor. Both are idempotent. Do not write your own migration files.
+---
 
-### 5. First sync
+## PHASE 4 — Connect ManyChat and their booking tool
 
-```
-npm run dev          # one terminal
-npm run sync -- --lookback=90    # another
-```
+`npm run deploy` prints their two webhook addresses with the secret already in
+them. Give them the finished addresses — never a template with `YOUR-APP` in it
+that they have to fill in themselves.
 
-Then `npm run doctor` and confirm `ads_meta_insights_daily` has rows.
+**ManyChat.** In the automation that already fires when someone sends the keyword,
+they add a step: **External Request**. Method POST. Paste the address. Body JSON:
 
-### 6. Wire the webhooks, then pin the calendars
-
-Give them these two URLs, with `WEBHOOK_SECRET` filled in from `.env.local`:
-
-```
-ManyChat  → POST https://APP/api/webhooks/manychat?secret=SECRET
-Bookings  → POST https://APP/api/webhooks/booking?secret=SECRET
+```json
+{ "keyword": "TRIM", "subscriber_id": "{{subscriber_id}}", "name": "{{first_name}}" }
 ```
 
-`docs/SOP.md` §5 has the field lists. Both endpoints answer `GET` with what they
-expect, which is the fastest way to check one is live.
+They need one per keyword, with that keyword's word in it. If they have five live
+keywords, that is five automations, each already existing — they are adding one
+step to each.
 
-Once a few bookings have arrived:
+**Their booking tool.** On whatever fires when a call gets booked, POST to the
+booking address. What to send:
+
+```json
+{
+  "appointment_id": "...", "calendar_id": "...", "contact_id": "...",
+  "contact_name": "...", "start_time": "...", "manychat_user_id": "..."
+}
+```
+
+Use their tool's own merge-field syntax — GoHighLevel and Calendly both differ.
+If you do not know it, say so and look it up rather than inventing field names.
+
+**`manychat_user_id` is the one that matters.** It ties the booked call back to the
+DM, and therefore back to the ad. Without it, most bookings will show as
+unattributed. If their booking tool cannot carry it, tell them plainly that
+attribution will be weaker and why, rather than letting them find out later.
+
+**To check either one is live**, open the address in a browser. It answers with
+whether the secret is right and what it expects.
+
+---
+
+## PHASE 5 — Pin the sales calendars
+
+After a few real bookings have come through:
 
 ```
 npm run calendars
 ```
 
-This prints the booking calendars that actually exist in their data, with counts.
-Put the **sales** calendar ids into `salesCalendarIds`. Not onboarding calls, not
-coaching calls, not reschedule calendars.
+This prints the calendars that actually exist in their data. Put the **sales call**
+ones into `salesCalendarIds`. Not onboarding calls. Not coaching calls.
 
-Watch for near-duplicate calendars with the same name and different ids — CRMs
-produce these constantly and bookings split silently between them. The script
-flags them. If both are genuinely sales calls, pin both.
+Watch for two calendars with almost the same name and different ids — booking tools
+produce these constantly and bookings split silently between them, which shows up
+as a booked count that is quietly too low. The script flags them.
 
-### 7. Deploy
+**Until this is done, no booked calls are counted at all.**
 
-Push to GitHub, import into Vercel, copy every variable from `.env.local` into the
-project's environment variables, set `AUTH_URL` to the production URL, and add the
-production callback URI to the Google OAuth client. `vercel.json` already schedules
-the crons.
+---
 
-### 8. Verify — do not skip this
+## PHASE 6 — Verify. Do not skip this.
 
-Open the dashboard and confirm, out loud, that:
+Open the dashboard and check, out loud, all four:
 
-- spend appears for each configured creator
-- the DM column is non-zero after a test keyword DM
+- spend is showing
+- a test keyword DM appears in the DM column
 - a test booking appears in the booked column
 - `npm run doctor` is clean
 
-If any of those is zero, say so plainly and diagnose it. An install that "completed"
-but shows an empty table is not an install.
+If any is zero, say so plainly and go and find out why. **A setup that "finished"
+but shows an empty table is not finished**, and they will not know the difference
+until a week has gone by.
+
+Then write them a short `MY-SETUP.md` in the project folder: their web address,
+their password, their two webhook addresses, which columns you mapped, and their
+live keywords. They will lose this chat. They will not lose that file.
 
 ---
 
 ## Rules that are not negotiable
 
-These encode failures that already happened, each of which produced confident wrong
+Each of these encodes a failure that already happened and produced confident wrong
 numbers for weeks before anyone noticed.
 
-**Never FX-convert sales money.** The sales tracker is one sheet in one currency for
-every creator. `currency` on a creator describes what Meta *bills their ad account*
-in, and applies to spend and budgets only. Converting tracker money once turned a
-$1,200 sale into $842 and nothing looked broken.
+**Never convert sales money between currencies.** The tracker is one sheet in one
+currency. `currency` describes what Meta *charges them*, and applies to ad spend
+only. Converting tracker money once turned a $1,200 sale into $842 and nothing
+looked broken.
 
-**Never write to the user's spreadsheet.** This app reads. That is all it does.
+**Never write to their spreadsheet.** This reads. That is all it does.
 
-**Never make a number up to fill a gap.** If attribution cannot connect a sale to an
-ad, it stays blank and shows as unattributed. Do not add a fallback that assigns it
-to the most likely keyword. The blank is the product.
+**Never invent a number to fill a gap.** If a sale cannot be tied to an ad, it stays
+blank and shows as unattributed. Do not add a fallback that assigns it to the most
+likely keyword. The blank is the product.
 
-**Never widen a keyword match.** Keywords are exact after normalisation. Fuzzy
-matching moves one creator's revenue onto another creator's ads.
+**Never loosen a keyword match.** Keywords are exact. Fuzzy matching moves revenue
+onto the wrong ad.
 
-**Never remove the `reporting_timezone` stamp** from `ads_meta_insights_daily` rows.
-Every read filters on it. An unstamped row exists, looks fine in the table, and
-contributes to nothing.
-
-**Never let one creator's failure take down another's.** Every sync step is isolated
-already. Keep it that way.
-
-**A keyword must be unique across every creator while it is live.** Two people
-running the same word at once makes it impossible to say whose ad a DM came from.
+**Never remove the `reporting_timezone` stamp** from spend rows. Every read filters
+on it. An unstamped row exists, looks fine, and counts toward nothing.
 
 ---
 
 ## How the code is arranged
 
 ```
-src/lib/ads-v2/       the engine. facts.ts decides what everything means.
-src/lib/ingest/       pulling the outside world in (Meta, sheets, FX)
-src/app/api/webhooks/ pushes from ManyChat and the booking CRM
-src/app/ads-v2/       the UI. ads-v2.css is self-contained.
-supabase/             the schema. Two files, both idempotent.
-scripts/              doctor, migrate, sync, calendars — read these first
+src/lib/ads-v2/       the engine. facts.ts decides what everything means
+src/lib/ingest/       pulling data in (Meta spend, the sheet, currency rates)
+src/app/api/webhooks/ things pushed at us (keyword DMs, bookings)
+src/app/ads-v2/       the dashboard itself. ads-v2.css is self-contained
+supabase/             the database, in two files. Safe to re-run
+scripts/              setup, db, deploy, doctor, calendars — read these first
 ```
 
-The sync orchestrator is `src/lib/ads-v2/sync.ts`. It reads top-to-bottom and the
-comments explain why each step is where it is.
-
-`docs/DATA-RULES.md` explains what each number means and when it is allowed to
+`docs/DATA-RULES.md` explains what every number means and when it is allowed to
 change. Read it before altering any calculation.
 
 ---
 
 ## When something is wrong
 
-| Symptom | Look here first |
+| What they see | Look here first |
 | --- | --- |
-| Table is empty | `npm run doctor`, then `adsv2_sync_runs` for the last run's error |
-| Spend but no DMs | the ManyChat webhook — `GET` the endpoint to check it is live |
-| DMs but no booked calls | `salesCalendarIds` is empty or has the wrong ids. `npm run calendars` |
-| Booked count looks low | duplicate calendars. `npm run calendars` flags them |
-| Sales show as unattributed | the sales sheet has no ManyChat link column, so there is nothing to join on |
-| One creator missing entirely | their Meta token expired. `adsv2_sync_runs.detail` names them |
-| Numbers stopped updating | `CRON_SECRET` mismatch between the env and the scheduler |
+| Table is empty | `npm run doctor`, then the `adsv2_sync_runs` table for the last error |
+| Spend but no DMs | ManyChat. Open the webhook address in a browser to test it |
+| DMs but no booked calls | `salesCalendarIds` is empty or wrong. `npm run calendars` |
+| Booked count too low | Two near-identical calendars. `npm run calendars` flags them |
+| Sales all unattributed | No ManyChat link column in their sheet, so there is nothing to join on |
+| Everything stopped updating | `CRON_SECRET` differs between their file and Vercel |
 
 `adsv2_sync_runs` and `adsv2_alerts` record every run and every problem, including
 runs that were skipped. Read them before theorising.
 
 ---
 
-## Tone
+## How to talk to them
 
-The person you are helping may not be technical. Write plainly. No jargon where a
-normal word works. When something is broken, say what is broken and what you are
-doing about it — do not bury it in a status update.
+Short sentences. No jargon that you do not define in the same breath. When
+something is broken, say what is broken and what you are doing about it — do not
+bury it at the end of a status update.
+
+They are a coach, not a developer. They do not want to understand this. They want
+to know which ad to turn off.

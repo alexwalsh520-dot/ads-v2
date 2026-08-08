@@ -10,7 +10,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
-import { auth } from "@/auth";
+import { isSignedIn } from "@/auth";
 import { getServiceSupabase } from "@/lib/supabase";
 import { CREATORS_BY_KEY, type CreatorKey } from "@/lib/creators";
 import { ADSV2_SERVED_CLIENTS } from "@/lib/ads-v2/config";
@@ -32,8 +32,7 @@ function isServed(client: string): client is CreatorKey {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isSignedIn())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const sb = getServiceSupabase();
   const { data } = await sb
@@ -61,8 +60,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isSignedIn())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = (await req.json().catch(() => ({}))) as { action?: string; client?: string };
   const action = body.action;

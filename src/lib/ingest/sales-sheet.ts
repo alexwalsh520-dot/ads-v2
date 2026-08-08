@@ -10,6 +10,9 @@
 // uses" is different in every business and hardcoding one is how a data
 // pipeline becomes un-installable.
 //
+// How the sheet is actually reached lives in sheet-source.ts — link-shared,
+// published, or API key. This file does not care which.
+//
 // MONEY IS READ AS-IS AND NEVER CONVERTED. The tracker is one sheet, written in
 // one currency, for every creator. FX belongs to ad SPEND only. Converting
 // tracker money once turned a $1,200 sale into $842 and nobody noticed for
@@ -22,8 +25,8 @@ import { getServiceSupabase } from "@/lib/supabase";
 import { loadConfig, type SalesSheetConfig } from "@/lib/config";
 import { normalizePersonName } from "@/lib/ads-tracker/normalize";
 import { startRun, finishRun } from "@/lib/ads-v2/db";
+import { fetchTab, resolveSheetSource, type SheetSource } from "./sheet-source";
 
-const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
 const UPSERT_CHUNK = 100;
 
 const MONTHS = [
@@ -134,28 +137,6 @@ export interface SalesSheetResult {
   skipped?: string;
 }
 
-async function fetchTab(
-  spreadsheetId: string,
-  tab: string,
-  apiKey: string,
-): Promise<string[][] | { error: string }> {
-  const range = encodeURIComponent(`${tab}!A1:BZ`);
-  const url = `${SHEETS_API}/${spreadsheetId}/values/${range}?key=${apiKey}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    const body = (await res.text()).slice(0, 300);
-    // A missing tab is normal — a monthly sheet simply has no tab for a month
-    // that has not started, or one you never created. Say so plainly and move
-    // on rather than failing the whole sync.
-    if (res.status === 400 && body.includes("Unable to parse range")) {
-      return { error: "tab not found" };
-    }
-    return { error: `sheets ${res.status}: ${body}` };
-  }
-  const json = (await res.json()) as { values?: string[][] };
-  return json.values ?? [];
-}
-
 function chunk<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
@@ -167,18 +148,19 @@ export async function runSalesSheetSync(
 ): Promise<SalesSheetResult> {
   const cfg: SalesSheetConfig = loadConfig().salesSheet;
   if (!cfg.enabled) {
-    return { rows: 0, tabs: [], skipped: "salesSheet.enabled is false" };
+    return { rows: 0, tabs: [], skipped: "the sales sheet is turned off in adsv2.config.json" };
   }
 
-  const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
-  const spreadsheetId = process.env[cfg.spreadsheetIdEnv];
-  if (!apiKey || !spreadsheetId) {
-    return {
-      rows: 0,
-      tabs: [],
-      skipped: `set GOOGLE_SHEETS_API_KEY and ${cfg.spreadsheetIdEnv} to enable the sales sheet`,
-    };
+  const resolved = resolveSheetSource({
+    sheetUrl: process.env[cfg.sheetUrlEnv] || null,
+    apiKey: process.env.GOOGLE_SHEETS_API_KEY || null,
+    spreadsheetId: process.env[cfg.spreadsheetIdEnv] || null,
+    prefer: cfg.source,
+  });
+  if ("error" in resolved) {
+    return { rows: 0, tabs: [], skipped: resolved.error };
   }
+  const source: SheetSource = resolved;
 
   const db = getServiceSupabase();
   const runId = await startRun(db, "sales_sheet");
@@ -189,16 +171,18 @@ export async function runSalesSheetSync(
   const dateTo = now.toISOString().slice(0, 10);
   const dateFrom = new Date(now.getTime() - lookback * 86_400_000).toISOString().slice(0, 10);
 
-  const tabs =
-    cfg.tabs === "monthly" ? monthTabsBetween(dateFrom, dateTo, cfg.monthTabFormat) : [cfg.tab];
+  // A published link points at one fixed tab, so month-by-month tabs cannot be
+  // walked. Read that one tab rather than pretending to read twelve.
+  const monthly = cfg.tabs === "monthly" && source.supportsNamedTabs;
+  const tabs = monthly ? monthTabsBetween(dateFrom, dateTo, cfg.monthTabFormat) : [cfg.tab];
 
   const result: SalesSheetResult = { rows: 0, tabs: [] };
 
   try {
     for (const tab of tabs) {
-      const values = await fetchTab(spreadsheetId, tab, apiKey);
-      if ("error" in values) {
-        result.tabs.push({ tab, rows: 0, error: values.error });
+      const { rows: values, error: tabError } = await fetchTab(source, tab);
+      if (tabError) {
+        result.tabs.push({ tab, rows: 0, error: tabError });
         continue;
       }
 
@@ -221,7 +205,7 @@ export async function runSalesSheetSync(
 
         payload.push({
           source: "google_sheets",
-          sheet_id: spreadsheetId,
+          sheet_id: source.spreadsheetId,
           sheet_tab: tab,
           sheet_row_key: sheetRowKey(tab, date, cell(row, cfg.columns, "callNumber"), name),
           date,
