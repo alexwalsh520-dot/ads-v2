@@ -374,18 +374,19 @@ A(steps([
     "Open your sales tracker in Google Sheets.",
     "Click <b>Share</b> → under <b>General access</b>, change <b>Restricted</b> to "
     "<b>Anyone with the link</b>. Leave it on <b>Viewer</b>.",
-    "Copy the link from your browser's address bar.",
-    "Give Claude the link, and <b>paste in your top row too</b> — the row with your column "
-    "names in it. That is how it works out which column is which.",
+    "Copy the link from your browser's address bar and give it to Claude.",
 ]))
+A(P("That is the whole job. Claude reads your column names itself and tells you which "
+    "column it thinks is which — you just confirm it got them right."))
 
 A(PageBreak())
 
 # ── connecting manychat ──────────────────────────────────────────────────
 A(P("PART THREE", "part"))
 A(P("Connecting ManyChat", "h1"))
-A(P("Claude gives you a private address to paste in. Two places in ManyChat need touching, "
-    "and both are in flows you already have.", "lead"))
+A(P("Two things happen here. The first is a small addition to the keyword automation you "
+    "already have. The second is a new automation you build, which is what gets the keyword "
+    "onto the booked call. Claude gives you the private address to paste in.", "lead"))
 
 A(P("Where the keyword gets captured", "h2"))
 A(P("In the automation that fires when someone sends one of your keywords, you add two things "
@@ -403,27 +404,41 @@ A(callout("One automation covers all your keywords.",
           "that keeps working exactly as it does now &mdash; put the request step after it, "
           "in the actions."))
 
-A(P("Where the keyword rides to the booking", "h2"))
-A(P("When your setter is ready to book someone, they apply your booking tag — the one that "
-    "already sends the calendar link."))
-A(P("That message needs the keyword on the end of the booking link, as "
-    "<font face='Courier'>utm_content</font>, pulled from the custom field you just set:"))
+A(P("The booking automation you need to build", "h2"))
+A(P("This one is new — you are creating it, not editing something you already have. It is "
+    "what carries the keyword onto the booked call, and without it every booking arrives "
+    "with no idea which ad caused it."))
+A(steps([
+    "<b>Make a tag</b>, named after the calendar it sends. Something like "
+    "<font face='Courier'>1_Day_Calendar</font>. One tag per calendar you offer.",
+    "<b>Make an automation</b> triggered by <b>Contact event occurs → Tag applied</b>, "
+    "set to that tag.",
+    "Its only step is <b>Send Message</b>, containing your booking link with the keyword "
+    "on the end of it:",
+]))
 A(code(["your-booking-link?utm_content={keyword}"]))
-A(P("That one addition is what carries the keyword from the DM onto the booked call. Without "
-    "it the booking arrives with no idea which ad it came from."))
-A(P("If you use more than one booking tag — a one-day calendar and a three-day calendar, say "
-    "— each one needs it.", "small"))
+A(callout("Make sure the keyword shows up BLUE.",
+          "Insert it using ManyChat's field picker, so it becomes the actual custom field. "
+          "In the editor it appears as a blue chip. If it is plain black text, ManyChat will "
+          "literally send the characters <font face='Courier'>{keyword}</font> to every lead "
+          "and nothing will attribute. Blue means it works."))
+A(P("From then on your setter's entire job is: apply the tag. The calendar link goes out by "
+    "itself, with that person's keyword already inside it."))
+A(P("If you offer more than one calendar, each tag needs its own automation, and every one "
+    "of those links needs the keyword on it.", "small"))
 
 A(P("Your booking tool", "h2"))
 A(P("Whatever fires when a call actually gets booked needs to send it over too. GoHighLevel, "
     "Calendly and most others can do this; the menus differ, so tell Claude which one you use "
     "and it will give you the exact steps."))
 
-A(P("Then mark your sales calendars", "h2"))
-A(P("Once a few real bookings have come through, Claude lists every calendar in your account "
-    "and you say which are <b>sales calls</b> — not onboarding calls, not coaching calls."))
-A(P("Until that is done, booked calls show as zero. It is the most common reason someone "
-    "thinks this is broken when it is not.", "small"))
+A(P("Which calendars are sales calls", "h2"))
+A(P("Claude asks you this during setup, so it is done before you ever open the dashboard. "
+    "You just say which of your calendars are <b>sales calls</b> — not onboarding calls, not "
+    "coaching calls. Those are real bookings, they are just not what you are measuring."))
+A(P("Later, once real bookings are flowing, Claude can list the calendars actually showing "
+    "up in your data and check them against what you said. That catches the classic one: two "
+    "calendars with nearly the same name, quietly splitting your bookings in half.", "small"))
 
 # ── after ────────────────────────────────────────────────────────────────
 A(P("When it is done", "h1"))

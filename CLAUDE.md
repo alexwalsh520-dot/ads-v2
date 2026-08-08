@@ -41,13 +41,22 @@ they can and say "not sure" to the rest — you will work the rest out.
 4. **What do you use for your Instagram DMs?** (Expect ManyChat. If something
    else, ask whether it can send a webhook — most can.)
 5. **What do you use to book calls?** (GoHighLevel, Calendly, something else)
-6. **Paste the top row of your sales tracker** — the row with the column names in
-   it. Assume they have one; every coach doing this does. This is the single most
-   useful thing they can give you, because it is how you map their columns.
-   Also ask: **is there a column where the ManyChat link gets pasted?** If not,
-   they need to add one before you finish (see Phase 4).
+6. **Send me the link to your sales tracker.** Tell them to open it, hit
+   **Share**, set **Anyone with the link** to **Viewer**, and paste the address.
+   Assume they have a tracker — every coach doing this does.
+
+   Do NOT ask them to type out their column names. Put the link in `SHEET_URL`
+   and run `npm run sheet` — it reads the headers, proposes a mapping, and shows
+   you two real rows read through it. You confirm the mapping with them in plain
+   words ("your Cash Collected column is the one I'm using for revenue — right?")
+   rather than making them do the work.
 7. **Does anyone else set appointments for you, or is it just you?**
-8. **What are your ads called right now in Ads Manager?** Ask for two or three
+8. **Which of your calendars are for SALES calls?** By name is fine. You need
+   this to tell a sales call apart from an onboarding or coaching call. Ask for
+   the calendar ids too if they can find them — in GoHighLevel they are in
+   Settings → Calendars, in the calendar's own link. If they cannot find them,
+   move on; `npm run calendars` will show them to you later.
+9. **What are your ads called right now in Ads Manager?** Ask for two or three
    real examples. You need this for Phase 2.
 
 ### Then explain what they just told you
@@ -86,7 +95,7 @@ Do not invent a naming convention for them. Do not suggest things like
 `Retarget | v3 | TEMPO` — that is not how these are named and it adds a rule
 nobody asked for. Plain keyword, unless they already do something else.
 
-Look at the real ad names they gave you in question 8. If any of them would parse
+Look at the real ad names they gave you in question 9. If any of them would parse
 wrong, **show them that ad, renamed, in the chat.** Do not explain it in the
 abstract.
 
@@ -134,8 +143,8 @@ Edit `adsv2.config.json`:
 - `business.name` — from question 1
 - `business.timezone` — from question 3
 - `business.currency` — whatever Meta charges them in
-- `salesSheet` — set `enabled: true` and **map `columns` from the header row they
-  pasted in question 6.** Column letters, counting from A. `date` and
+- `salesSheet` — set `enabled: true` and **map `columns` from what `npm run sheet`
+  proposed and they confirmed.** Column letters, counting from A. `date` and
   `prospectName` are required. Map `manychatLink` to whichever column holds the
   ManyChat link — it is worth more than all the other optional columns combined.
 - Leave `salesCalendarIds` empty. You fill it in at Phase 5.
@@ -215,20 +224,35 @@ Note that ManyChat's Preview pane shows **"Invalid JSON — Variables are not de
 while you are editing. That is normal; it cannot resolve the merge fields until a real
 contact runs through. It is not an error, and they will ask about it.
 
-### ManyChat — where the keyword rides to the booking
+### ManyChat — the booking automation they have to BUILD
 
-This is the step people miss, and without it every booking arrives orphaned.
+Do not assume this already exists. Most people send the calendar link by hand, or
+from a flow that does not carry anything with it. **They are building this now**, and
+it is the step that makes bookings attributable at all.
 
-When the setter is ready to book someone, they apply a booking tag (`1_Day_Calendar`,
-`3_Day_Calendar`, whatever they use). That tag triggers an automation that sends the
-calendar link. **That link must carry the keyword:**
+Walk them through creating it:
+
+1. **Make a tag.** Name it after the calendar it sends — `1_Day_Calendar`,
+   `3_Day_Calendar`, whatever calendars they actually offer. One tag per calendar.
+2. **Make an automation** triggered by **Contact event occurs → Tag applied →**
+   that tag.
+3. The automation's only step is **Send Message** with their booking link, and the
+   link must end with the keyword:
 
 ```
 https://their-booking-link?utm_content={keyword}
 ```
 
-— pulling from the same `keyword` custom field set at the top of the funnel. Every
-booking tag they use needs it, not just the first one.
+4. **The `{keyword}` has to be the actual ManyChat custom field, not typed text.**
+   Insert it with the field picker. In the editor it shows as a blue chip. If it is
+   plain black text, it will send the literal characters `{keyword}` to every lead
+   and nothing will attribute. Tell them to check it is blue.
+
+From then on the setter's whole job is: apply the tag. The link goes out
+automatically, with that person's keyword already in it.
+
+If they offer more than one calendar, every tag needs its own automation, and every
+one of those links needs the keyword on it.
 
 ### Their booking tool
 
@@ -259,24 +283,35 @@ be attributed.
 **To check either endpoint is live**, open its address in a browser. It answers with
 whether the secret is right and what it expects.
 
-## PHASE 5 — Pin the sales calendars
+## PHASE 5 — Set the sales calendars
 
-After a few real bookings have come through:
+You asked which calendars are sales calls in question 8. Put their ids into
+`salesCalendarIds` now — do not wait for bookings to accumulate first. A dashboard
+that shows zero booked calls for a week because this was left for later is a
+dashboard they stop trusting.
+
+If they gave you calendar names but not ids, help them find the ids. In GoHighLevel:
+Settings → Calendars → open the calendar → the id is in the address. Calendly and
+others put it in the event type's settings.
+
+Only sales calls go in. Not onboarding calls, not coaching calls, not reschedule
+calendars. Those are real bookings; they are just not sales calls, and counting them
+would flatter the numbers.
+
+**Then confirm it against reality.** Once some real bookings have come through:
 
 ```
 npm run calendars
 ```
 
-This prints the calendars that actually exist in their data. Put the **sales call**
-ones into `salesCalendarIds`. Not onboarding calls. Not coaching calls.
+This lists the calendars actually appearing in their data, with counts. Check it
+against what they told you. Two things to look for:
 
-Watch for two calendars with almost the same name and different ids — booking tools
-produce these constantly and bookings split silently between them, which shows up
-as a booked count that is quietly too low. The script flags them.
-
-**Until this is done, no booked calls are counted at all.**
-
----
+- a calendar with bookings that is not in the config, and should be
+- two calendars with nearly identical names and different ids, splitting their
+  bookings between them. Booking tools produce these constantly and it shows up as a
+  booked count that is quietly too low. The script flags them. If both are genuinely
+  sales calls, pin both.
 
 ## PHASE 6 — Verify. Do not skip this.
 

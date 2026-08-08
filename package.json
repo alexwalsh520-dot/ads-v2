@@ -13,6 +13,7 @@
     "db": "node scripts/setup-database.mjs",
     "deploy": "node scripts/deploy.mjs",
     "doctor": "node scripts/doctor.mjs",
+    "sheet": "tsx scripts/peek-sheet.ts",
     "calendars": "node scripts/list-calendars.mjs",
     "sync": "node scripts/sync.mjs",
     "pdf": "python3 scripts/make-guide-pdf.py"
