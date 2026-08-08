@@ -9,7 +9,8 @@ import { useState } from "react";
 
 export interface LineSeries {
   name: string;
-  values: number[];
+  /** Null = no data that day: the line breaks into a gap there. */
+  values: (number | null)[];
   color: string;
   dashed?: boolean;
   isPrimary?: boolean;
@@ -22,23 +23,58 @@ interface Pt {
   y: number;
 }
 
+// Monotone cubic interpolation (Fritsch-Carlsson). Unlike the old Catmull-Rom
+// smoothing, the curve can NEVER overshoot the data: a series of 100% days
+// followed by a 0% day draws a curve that stays inside [0%, 100%] instead of
+// bulging above the top and dipping below the floor.
 function smoothPath(points: Pt[]): string {
   if (points.length < 2) return "";
-  const p = points;
-  let d = `M ${p[0].x} ${p[0].y}`;
-  for (let i = 0; i < p.length - 1; i++) {
-    const p0 = p[i - 1] || p[i];
-    const p1 = p[i];
-    const p2 = p[i + 1];
-    const p3 = p[i + 2] || p2;
-    const t = 0.18;
-    const c1x = p1.x + (p2.x - p0.x) * t;
-    const c1y = p1.y + (p2.y - p0.y) * t;
-    const c2x = p2.x - (p3.x - p1.x) * t;
-    const c2y = p2.y - (p3.y - p1.y) * t;
-    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
+  const n = points.length;
+  const dx: number[] = [];
+  const slope: number[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    const h = points[i + 1].x - points[i].x;
+    dx.push(h);
+    slope.push((points[i + 1].y - points[i].y) / (h || 1));
+  }
+  const tangent: number[] = [slope[0]];
+  for (let i = 1; i < n - 1; i++) {
+    if (slope[i - 1] * slope[i] <= 0) {
+      tangent.push(0);
+    } else {
+      const w1 = 2 * dx[i] + dx[i - 1];
+      const w2 = dx[i] + 2 * dx[i - 1];
+      tangent.push((w1 + w2) / (w1 / slope[i - 1] + w2 / slope[i]));
+    }
+  }
+  tangent.push(slope[n - 2]);
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < n - 1; i++) {
+    const h = dx[i];
+    const c1x = points[i].x + h / 3;
+    const c1y = points[i].y + (tangent[i] * h) / 3;
+    const c2x = points[i + 1].x - h / 3;
+    const c2y = points[i + 1].y - (tangent[i + 1] * h) / 3;
+    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${points[i + 1].x} ${points[i + 1].y}`;
   }
   return d;
+}
+
+// Consecutive non-null points, so a null day splits the line into segments
+// with a visible gap instead of pretending a value existed.
+function runsOf(points: (Pt | null)[]): Pt[][] {
+  const runs: Pt[][] = [];
+  let cur: Pt[] = [];
+  for (const p of points) {
+    if (p) {
+      cur.push(p);
+    } else if (cur.length) {
+      runs.push(cur);
+      cur = [];
+    }
+  }
+  if (cur.length) runs.push(cur);
+  return runs;
 }
 
 export default function LineChart({
@@ -49,6 +85,7 @@ export default function LineChart({
   fmt = (v: number) => String(v),
   fmtRight,
   idBase,
+  leftMax,
 }: {
   series: LineSeries[];
   labels: string[];
@@ -58,6 +95,9 @@ export default function LineChart({
   fmtRight?: (v: number) => string;
   /** Unique per card, so the gradient ids never collide across cards. */
   idBase: string;
+  /** Hard ceiling for the left axis (e.g. 1 for a share): the scale never
+   *  shows headroom above a value the metric cannot reach. */
+  leftMax?: number;
 }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const hasRight = series.some((s) => s.axis === "right");
@@ -66,25 +106,30 @@ export default function LineChart({
   const innerH = height - pad.t - pad.b;
   const n = labels.length;
 
-  const buildScale = (vals: number[]) => {
+  const buildScale = (vals: number[], cap?: number) => {
     const minV = Math.min(...vals, 0);
     const maxV = Math.max(...vals);
     const range = Math.max(maxV - minV, 1);
-    const yMax = maxV + range * 0.18;
+    let yMax = maxV + range * 0.18;
+    // A capped axis (a share) never shows headroom past its ceiling. If the
+    // data somehow exceeded the cap, the data wins so nothing clips.
+    if (cap != null) yMax = Math.min(yMax, Math.max(cap, maxV));
     const yMin = Math.max(0, minV - range * 0.12);
-    const yR = Math.max(yMax - yMin, 1);
+    const yR = Math.max(yMax - yMin, cap != null ? 1e-6 : 1);
     return { yMin, yMax, yR };
   };
-  const leftVals = series.filter((s) => s.axis !== "right").flatMap((s) => s.values);
-  const rightVals = series.filter((s) => s.axis === "right").flatMap((s) => s.values);
-  const leftScale = buildScale(leftVals.length ? leftVals : [0, 1]);
-  const rightScale = hasRight ? buildScale(rightVals) : leftScale;
+  const notNull = (vals: (number | null)[]) => vals.filter((v): v is number => v != null && Number.isFinite(v));
+  const leftVals = notNull(series.filter((s) => s.axis !== "right").flatMap((s) => s.values));
+  const rightVals = notNull(series.filter((s) => s.axis === "right").flatMap((s) => s.values));
+  const leftScale = buildScale(leftVals.length ? leftVals : [0, 1], leftMax);
+  const rightScale = hasRight ? buildScale(rightVals.length ? rightVals : [0, 1]) : leftScale;
   const scaleFor = (s: LineSeries) => (s.axis === "right" ? rightScale : leftScale);
   const xOf = (i: number) => pad.l + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW);
   const yOfScale = (v: number, sc: { yMin: number; yR: number }) =>
     pad.t + innerH - ((v - sc.yMin) / sc.yR) * innerH;
   const yOf = (v: number, s: LineSeries) => yOfScale(v, scaleFor(s));
-  const pointsFor = (s: LineSeries): Pt[] => s.values.map((v, i) => ({ x: xOf(i), y: yOf(v, s) }));
+  const pointsFor = (s: LineSeries): (Pt | null)[] =>
+    s.values.map((v, i) => (v == null || !Number.isFinite(v) ? null : { x: xOf(i), y: yOf(v, s) }));
 
   const tickFractions = [0, 0.33, 0.66, 1];
   const leftTicks = tickFractions.map((t) => leftScale.yMin + t * leftScale.yR);
@@ -212,26 +257,41 @@ export default function LineChart({
         })}
         {series.map((s, i) => {
           if (!s.isPrimary) return null;
-          const pts = pointsFor(s);
-          if (pts.length < 2) return null;
           const baseline = yOfScale(scaleFor(s).yMin, scaleFor(s));
-          const d =
-            smoothPath(pts) + ` L ${pts[pts.length - 1].x} ${baseline} L ${pts[0].x} ${baseline} Z`;
-          return <path key={`f${i}`} d={d} fill={`url(#lc-fade-${idBase}-${i})`} />;
+          return runsOf(pointsFor(s)).map((run, r) => {
+            if (run.length < 2) return null;
+            const d =
+              smoothPath(run) + ` L ${run[run.length - 1].x} ${baseline} L ${run[0].x} ${baseline} Z`;
+            return <path key={`f${i}-${r}`} d={d} fill={`url(#lc-fade-${idBase}-${i})`} />;
+          });
         })}
-        {series.map((s, i) => (
-          <path
-            key={`l${i}`}
-            d={smoothPath(pointsFor(s))}
-            fill="none"
-            stroke={s.color}
-            strokeWidth={s.isPrimary ? 2 : 1.5}
-            strokeDasharray={s.dashed ? "4 4" : undefined}
-            strokeOpacity={s.isPrimary ? 1 : 0.6}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ))}
+        {series.map((s, i) =>
+          runsOf(pointsFor(s)).map((run, r) =>
+            run.length >= 2 ? (
+              <path
+                key={`l${i}-${r}`}
+                d={smoothPath(run)}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={s.isPrimary ? 2 : 1.5}
+                strokeDasharray={s.dashed ? "4 4" : undefined}
+                strokeOpacity={s.isPrimary ? 1 : 0.6}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ) : (
+              // A single day of data between gaps still shows as a dot.
+              <circle
+                key={`l${i}-${r}`}
+                cx={run[0].x}
+                cy={run[0].y}
+                r={s.isPrimary ? 3 : 2.5}
+                fill={s.color}
+                fillOpacity={s.isPrimary ? 1 : 0.6}
+              />
+            ),
+          ),
+        )}
         {hoverIdx !== null && (
           <g>
             <line
@@ -243,17 +303,21 @@ export default function LineChart({
               strokeWidth="1"
               strokeDasharray="3 3"
             />
-            {series.map((s, i) => (
-              <circle
-                key={`d${i}`}
-                cx={xOf(hoverIdx)}
-                cy={yOf(s.values[hoverIdx], s)}
-                r={s.isPrimary ? 4 : 3}
-                fill="var(--bg)"
-                stroke={s.color}
-                strokeWidth="2"
-              />
-            ))}
+            {series.map((s, i) => {
+              const v = s.values[hoverIdx];
+              if (v == null || !Number.isFinite(v)) return null;
+              return (
+                <circle
+                  key={`d${i}`}
+                  cx={xOf(hoverIdx)}
+                  cy={yOf(v, s)}
+                  r={s.isPrimary ? 4 : 3}
+                  fill="var(--bg)"
+                  stroke={s.color}
+                  strokeWidth="2"
+                />
+              );
+            })}
           </g>
         )}
       </svg>
@@ -265,13 +329,18 @@ export default function LineChart({
           return (
             <div className="lc-tooltip" style={{ left: `${pct}%`, transform }}>
               <div className="lc-tt-date">{labels[hoverIdx]}</div>
-              {series.map((s, i) => (
-                <div key={i} className="lc-tt-row">
-                  <span className="lc-tt-sw" style={{ background: s.color, opacity: s.isPrimary ? 1 : 0.6 }} />
-                  <span className="lc-tt-name">{s.name}</span>
-                  <span className="lc-tt-val mono">{(s.fmt || fmt)(s.values[hoverIdx])}</span>
-                </div>
-              ))}
+              {series.map((s, i) => {
+                const v = s.values[hoverIdx];
+                return (
+                  <div key={i} className="lc-tt-row">
+                    <span className="lc-tt-sw" style={{ background: s.color, opacity: s.isPrimary ? 1 : 0.6 }} />
+                    <span className="lc-tt-name">{s.name}</span>
+                    <span className="lc-tt-val mono">
+                      {v == null || !Number.isFinite(v) ? "no data" : (s.fmt || fmt)(v)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           );
         })()}

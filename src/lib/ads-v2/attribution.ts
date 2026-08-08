@@ -350,8 +350,8 @@ export interface BookingRecord {
   startTime: string | null; // ISO
   createdTime: string | null; // ISO
   dmEtDay: string | null;
-  createdEtDay?: string | null; // ET day the booking was made
-  bookedEtDay: string; // ET day the call is scheduled for
+  bookedEtDay: string; // ET day the booking was MADE (what Booked counts on)
+  callEtDay?: string | null; // ET day the call is scheduled for
   isUpcoming: boolean;
   taken: boolean; // hard-key-linked taken record (drives "showed")
   ghlStatus?: string | null; // GoHighLevel appointment status (drives "no show")
@@ -409,14 +409,13 @@ export function groupBookingsByPerson(records: readonly BookingRecord[]): Groupe
         : anyNoShow
           ? "noshow"
           : "no_outcome";
-    const callDay = latest.bookedEtDay; // ET day of the scheduled call
     out.push({
       name: latest.personName || "Unknown",
       dmEtDay: latest.dmEtDay,
-      // "Booked" = the day the booking was made; fall back to the call day when
-      // the created time is unknown so the column is never blank on a real call.
-      bookedEtDay: latest.createdEtDay || callDay,
-      callEtDay: callDay,
+      // "Booked" = the day the booking was made (the day the cell counts on);
+      // "Call" = the day the call is scheduled for.
+      bookedEtDay: latest.bookedEtDay,
+      callEtDay: latest.callEtDay ?? latest.bookedEtDay,
       status,
       records: list.length,
     });

@@ -97,6 +97,11 @@ types the keyword three times is one DM.
 **Booked calls** are counted per distinct person, not per row. Someone who
 reschedules twice is one booked call, not three.
 
+**A booking counts on the day it was MADE**, not the day the call is scheduled for.
+"Booked" answers "how many calls did we book this week", so a call booked Thursday
+night for a Friday slot counts under Thursday. The scheduled time still drives
+whether a call is upcoming, and the Call column in the popup.
+
 **Calls taken** counts what actually happened, from the sales tracker.
 
 **Show rate** is taken ÷ due, per person, and a call still in the future is **not**

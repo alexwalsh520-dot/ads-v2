@@ -122,9 +122,9 @@ export const COLUMNS: readonly ColumnDef[] = [
     key: "booked",
     label: "Calls booked",
     sentence:
-      "How many different people booked a strategy call from this ad's keyword.",
+      "How many different people booked a strategy call from this ad's keyword in this window, counted on the day they booked it.",
     source:
-      "GoHighLevel sales-calendar bookings that carry the keyword, counted as distinct people, with reschedules grouped under one person.",
+      "GoHighLevel sales-calendar bookings that carry the keyword, counted as distinct people on the day the booking was made (not the day the call is scheduled for), with reschedules grouped under one person.",
     format: "int",
     logged: true,
   },

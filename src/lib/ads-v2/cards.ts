@@ -29,8 +29,10 @@ export interface CardDef {
    *  Revenue-category cards read the payload's revenue block instead and get
    *  null until a snapshot built after the block existed serves the window. */
   value: (t: BaseMetrics, r?: RevenueCategories) => number | null;
-  /** One chart point from one ET day (0 when undefined, for a clean line). */
-  point: (d: MetricsDay) => number;
+  /** One chart point from one ET day. Null means "no data that day" and the
+   *  chart draws a GAP there, never a fake zero (a share with an empty
+   *  denominator is not 0%, it is nothing). */
+  point: (d: MetricsDay) => number | null;
   /** True for cards whose number covers the whole team tracker, not only the
    *  selected account. Hidden on client share links. */
   trackerWide?: boolean;
@@ -258,19 +260,26 @@ export const CARD_DEFS: readonly CardDef[] = [
   {
     id: "attribution_coverage",
     label: "Attribution coverage",
-    meta: "Revenue with a known origin",
+    meta: "Share of revenue with a known origin",
     sentence:
-      "The share of ALL tracker revenue in the selected days with a recorded origin: an ad keyword, an organic keyword, or a call type the team wrote that states one (Miscellaneous Chat, Follow up, Outbound Call, Closer Cold Call). Whole team on every account view; the rest has no recorded origin yet.",
+      "Of all the money the whole team collected on the tracker in these days, the share where we know where the sale came from: an ad keyword, an organic keyword, or a call type the team wrote down (Miscellaneous Chat, Follow up, Outbound Call, Closer Cold Call). A day with no collected cash counts as 100%: nothing came in, so nothing is missing an origin. Any dip below 100% is a real miss, cash collected with no recorded origin.",
     source: "Origin-recorded revenue (ads + organic + misc chats + other written origins) divided by all tracker revenue.",
     format: "pct",
     value: (_t, r) =>
-      r && r.trackerAllCents > 0
-        ? (r.adsAllCents + r.organicAllCents + r.miscChatCents + (r.otherOriginAllCents ?? 0)) /
-          r.trackerAllCents
+      r
+        ? r.trackerAllCents > 0
+          ? (r.adsAllCents + r.organicAllCents + r.miscChatCents + (r.otherOriginAllCents ?? 0)) /
+            r.trackerAllCents
+          : 1
         : null,
     point: (d) => {
       const denom = d.trackerAllCents ?? 0;
-      if (!denom) return 0;
+      // No collected cash that day = a perfect day for this gauge: nothing
+      // came in, so nothing is missing an origin. 100%, not 0% and not a
+      // gap (owner call, Alex 2026-08-08): this card answers "is the
+      // attribution system missing money?", and on an empty day it missed
+      // nothing. The dashed $0 line shows the day carried no cash.
+      if (!denom) return 1;
       return (
         ((d.adsAllCents ?? 0) +
           (d.organicAllCents ?? 0) +

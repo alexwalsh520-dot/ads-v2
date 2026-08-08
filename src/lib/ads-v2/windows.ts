@@ -572,7 +572,7 @@ async function loadHoverDetails(
     list.push({
       name: s.prospect_name || "Unknown",
       dmEtDay: linked?.dm_et_day ?? null,
-      bookedEtDay: linked ? (linked.created_time ? etDay(linked.created_time) : linked.booked_et_day) : null,
+      bookedEtDay: linked ? linked.booked_et_day : null,
       callEtDay: s.sale_et_day,
       status: "showed",
       records: 1,
@@ -598,8 +598,8 @@ async function loadHoverDetails(
       startTime: b.start_time,
       createdTime: b.created_time,
       dmEtDay: b.dm_et_day,
-      createdEtDay: b.created_time ? etDay(b.created_time) : null,
       bookedEtDay: b.booked_et_day,
+      callEtDay: b.start_time ? etDay(b.start_time) : null,
       isUpcoming: b.is_upcoming,
       taken: Boolean(b.taken),
       ghlStatus: b.status,

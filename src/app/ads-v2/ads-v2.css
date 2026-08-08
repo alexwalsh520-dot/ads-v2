@@ -483,7 +483,10 @@ html.light .adsv2 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 240px;
+  /* The prefix is context, not the text being read: it may ellipsize at this
+     cap so the ROW name (ad set / ad) always gets the room to show in full.
+     Matches FLAT_PREFIX_MAX in CampaignTable.tsx. */
+  max-width: 200px;
 }
 .adsv2 .flat-sep {
   color: var(--text-4);
@@ -509,6 +512,12 @@ html.light .adsv2 {
 .adsv2 .flat-cell > .flat-name {
   flex: 0 1 auto;
   min-width: 0;
+}
+/* When the cell runs out of room, the campaign prefix collapses long before
+   the row name does: the name is the text being read, the prefix is context. */
+.adsv2 .flat-cell > .flat-camp {
+  flex-shrink: 60;
+  min-width: 28px;
 }
 /* v1 renders table numbers in the body font (Inter) with tabular figures, NOT
    a mono font. Match that: tabular-nums only, no font-family override. */

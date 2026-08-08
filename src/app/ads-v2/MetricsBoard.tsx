@@ -76,6 +76,8 @@ function axisFormat(fmt: CardFormat) {
       if (abs >= 1000) return `$${Math.round((v / 1000) * 10) / 10}k`;
       return `$${Math.round(v)}`;
     }
+    // Whole-number percent ticks: "67%", never "66.7%".
+    if (fmt === "pct") return `${Math.round(v * 100)}%`;
     return formatValue(v, fmt);
   };
 }
@@ -537,6 +539,9 @@ function MetricChartCard({
           },
         ]}
         fmt={axisFmt}
+        // A share can never pass 100%: the axis stops there instead of
+        // drawing headroom above an impossible value.
+        leftMax={def.format === "pct" ? 1 : undefined}
       />
       <div className="chart-legend">
         <span className="chart-legend-item">
