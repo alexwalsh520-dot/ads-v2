@@ -25,13 +25,13 @@ one. Keep that. It is the only reason the numbers are worth looking at.
 
 ---
 
-## PHASE 1 — Interview them first
+## PHASE 1, Interview them first
 
 **Do this before you touch a single file.** The whole point is that the finished
 dashboard fits *their* business. You cannot know that from the code.
 
 Ask these in ONE message, numbered, in plain language. Tell them to answer what
-they can and say "not sure" to the rest — you will work the rest out.
+they can and say "not sure" to the rest, you will work the rest out.
 
 1. **What is your business called?** (just for the top of the dashboard)
 2. **Do you run Meta ads yourself, or does someone run them for you?**
@@ -39,21 +39,21 @@ they can and say "not sure" to the rest — you will work the rest out.
    them to open Ads Manager → Billing, or just say "not sure" and you will use
    their local timezone.
 4. **What do you use for your Instagram DMs?** (Expect ManyChat. If something
-   else, ask whether it can send a webhook — most can.)
+   else, ask whether it can send a webhook, most can.)
 5. **What do you use to book calls?** (GoHighLevel, Calendly, something else)
 6. **Send me the link to your sales tracker.** Tell them to open it, hit
    **Share**, set **Anyone with the link** to **Viewer**, and paste the address.
-   Assume they have a tracker — every coach doing this does.
+   Assume they have a tracker, every coach doing this does.
 
    Do NOT ask them to type out their column names. Put the link in `SHEET_URL`
-   and run `npm run sheet` — it reads the headers, proposes a mapping, and shows
+   and run `npm run sheet`, it reads the headers, proposes a mapping, and shows
    you two real rows read through it. You confirm the mapping with them in plain
-   words ("your Cash Collected column is the one I'm using for revenue — right?")
+   words ("your Cash Collected column is the one I'm using for revenue, right?")
    rather than making them do the work.
 7. **Does anyone else set appointments for you, or is it just you?**
 8. **Which of your calendars are for SALES calls?** By name is fine. You need
    this to tell a sales call apart from an onboarding or coaching call. Ask for
-   the calendar ids too if they can find them — in GoHighLevel they are in
+   the calendar ids too if they can find them, in GoHighLevel they are in
    Settings → Calendars, in the calendar's own link. If they cannot find them,
    move on; `npm run calendars` will show them to you later.
 9. **What are your ads called right now in Ads Manager?** Ask for two or three
@@ -74,12 +74,12 @@ built on a wrong picture will produce numbers that look fine and are wrong.
 
 ---
 
-## PHASE 2 — Teach the two rules, before anything is built
+## PHASE 2, Teach the two rules, before anything is built
 
 These are not optional and they are not technical. If they do not do these, the
 dashboard will be blank and they will think it is broken.
 
-### Rule 1 — name the ad after the keyword
+### Rule 1, name the ad after the keyword
 
 Simplest version, and the one to lead with: **the ad's name is the keyword.**
 
@@ -92,7 +92,7 @@ The parser takes the last word of the name, so `Lead Magnet | STRONG` gives `str
 while `STRONG retarget` gives `retarget` and that ad is never credited with anything.
 
 Do not invent a naming convention for them. Do not suggest things like
-`Retarget | v3 | TEMPO` — that is not how these are named and it adds a rule
+`Retarget | v3 | TEMPO`, that is not how these are named and it adds a rule
 nobody asked for. Plain keyword, unless they already do something else.
 
 Look at the real ad names they gave you in question 9. If any of them would parse
@@ -103,17 +103,17 @@ Tell them plainly what happens if they do not: the money still shows up, but tha
 ad can never be credited with a single DM, call, or sale. It sits at the top of
 the list spending money with zeros next to it.
 
-### Rule 2 — never use the same keyword twice at the same time
+### Rule 2, never use the same keyword twice at the same time
 
 One live ad, one word. If two ads both say DM me STRONG, nothing can tell you which
 one produced the sale.
 
-Reusing a word later is fine — leave a few weeks after you turn the first one off.
+Reusing a word later is fine, leave a few weeks after you turn the first one off.
 
-### Rule 3 — the sales tracker columns have to actually get filled in
+### Rule 3, the sales tracker columns have to actually get filled in
 
 **Nothing in this system detects who showed up to a call.** Say that plainly. It is a
-common and reasonable assumption that the booking tool knows, and it does not — the
+common and reasonable assumption that the booking tool knows, and it does not, the
 booking tool only knows a booking exists.
 
 Show rate comes from the **call taken** column in their sales tracker, ticked by a
@@ -131,10 +131,10 @@ them.
 
 ---
 
-## PHASE 3 — Build it
+## PHASE 3, Build it
 
 They may have started this by pasting the repo link at you rather than opening a
-folder. Either is fine — clone it somewhere sensible and work from there.
+folder. Either is fine, clone it somewhere sensible and work from there.
 
 Now do the work, in this order.
 
@@ -150,13 +150,13 @@ the password it printed and tell them to write it down.**
 
 Edit `adsv2.config.json`:
 
-- `business.name` — from question 1
-- `business.timezone` — from question 3
-- `business.currency` — whatever Meta charges them in
-- `salesSheet` — set `enabled: true` and **map `columns` from what `npm run sheet`
+- `business.name`, from question 1
+- `business.timezone`, from question 3
+- `business.currency`, whatever Meta charges them in
+- `salesSheet`, set `enabled: true` and **map `columns` from what `npm run sheet`
   proposed and they confirmed.** Column letters, counting from A. `date` and
   `prospectName` are required. Map `manychatLink` to whichever column holds the
-  ManyChat link — it is worth more than all the other optional columns combined.
+  ManyChat link, it is worth more than all the other optional columns combined.
 - Leave `salesCalendarIds` empty. You fill it in at Phase 5.
 
 If their sheet has one tab per month, set `tabs: "monthly"` and match
@@ -168,9 +168,9 @@ Ask for these in one message, with the exact link for each:
 
 | What | Where | Why it matters |
 | --- | --- | --- |
-| Supabase **personal access token** | supabase.com/dashboard/account/tokens → Generate new token. Starts `sbp_`. This is an ACCOUNT-level token — NOT the anon / service_role / publishable / secret keys inside a project. They will go looking in the project first; head them off. | This is where their numbers get stored |
+| Supabase **personal access token** | supabase.com/dashboard/account/tokens → Generate new token. Starts `sbp_`. This is an ACCOUNT-level token, NOT the anon / service_role / publishable / secret keys inside a project. They will go looking in the project first; head them off. | This is where their numbers get stored |
 | Meta ad account id + access token | A **System User** token, so it never expires. The setup guide PDF has the click path | Without it there is no ad spend at all |
-| Vercel **access token** | vercel.com/account/tokens → Create Token. Scope MUST be **Full Account** — a project-scoped token cannot create the project, and the project does not exist yet. Starts `vcp_`. | This is what puts it on the internet |
+| Vercel **access token** | vercel.com/account/tokens → Create Token. Scope MUST be **Full Account**, a project-scoped token cannot create the project, and the project does not exist yet. Starts `vcp_`. | This is what puts it on the internet |
 | Their sales sheet link | Share → anyone with the link → Viewer, then copy the address | This is where money comes from |
 
 Then:
@@ -183,13 +183,13 @@ npm run doctor    # tells you both what is left
 
 ---
 
-## PHASE 4 — Connect ManyChat and their booking tool
+## PHASE 4, Connect ManyChat and their booking tool
 
 `npm run deploy` prints their two webhook addresses with the secret already in them.
 **Give them the finished addresses.** Never a template with `YOUR-APP` in it that they
 have to complete themselves.
 
-### ManyChat — start from what they actually have
+### ManyChat, start from what they actually have
 
 **Assume they have almost nothing.** Their setup is one automation: a trigger that
 fires on their keyword, and a message that replies. That is it. No custom fields, no
@@ -213,12 +213,12 @@ It has to run before anything else so the keyword is saved the instant the DM la
 If they have a randomiser splitting setters, the action box goes between the trigger
 and the randomiser.
 
-There is no "+ button underneath the message box" — that is not how the ManyChat
+There is no "+ button underneath the message box", that is not how the ManyChat
 canvas works. They add a step with the **+** button, get a new box on the canvas, and
 then drag the connecting line so it runs trigger → new box → message. Say it that
 way.
 
-**Step 1 — save the word they sent.** Explain what a custom field is before using the
+**Step 1, save the word they sent.** Explain what a custom field is before using the
 term: ManyChat keeps a card on each person, and a custom field is a blank box on that
 card that they name themselves.
 
@@ -226,7 +226,7 @@ card that they name themselves.
 - Create a new field called `keyword`
 - Set the value to **Last Text Input**
 
-**Step 2 — send it over.** Same action box, **+ Add Action** → **External Request**.
+**Step 2, send it over.** Same action box, **+ Add Action** → **External Request**.
 Explain what that is: ManyChat telling another app something happened.
 
 **One automation covers every keyword**, because the word is read from what they
@@ -234,14 +234,14 @@ typed. They do NOT need one per keyword. If you have them build five automations
 five keywords you have made their life materially worse for nothing.
 
 If they happen to have a randomiser splitting setters, the action box goes on each
-branch. Most of them will not have one — do not raise it unless they do.
+branch. Most of them will not have one, do not raise it unless they do.
 
 The External Request itself:
 
 - **Request Type:** POST
 - **Request URL:** the manychat address from `npm run deploy`
 - **Headers:** `Content-Type: application/json`, and `X-Webhook-Secret` set to their
-  `WEBHOOK_SECRET`. Prefer the header over putting the secret in the URL — it keeps
+  `WEBHOOK_SECRET`. Prefer the header over putting the secret in the URL, it keeps
   the secret out of anything that logs URLs.
 - **Body:** JSON, using ManyChat's own field pickers
 
@@ -257,21 +257,21 @@ The External Request itself:
 
 `subscriber_id` and `keyword` are the two that matter. The rest is nice to have.
 
-Note that ManyChat's Preview pane shows **"Invalid JSON — Variables are not defined"**
+Note that ManyChat's Preview pane shows **"Invalid JSON, Variables are not defined"**
 while you are editing. That is normal; it cannot resolve the merge fields until a real
 contact runs through. It is not an error, and they will ask about it.
 
-### ManyChat — the booking automation they have to BUILD
+### ManyChat, the booking automation they have to BUILD
 
 **They send booking links by hand right now.** Pasting the calendar link into the
-chat. There is no automation, no tag, nothing. Do not imply otherwise — they will go
+chat. There is no automation, no tag, nothing. Do not imply otherwise, they will go
 looking for something that does not exist and conclude they have missed a step.
 
 This is new construction, and it is the step that makes bookings attributable at all.
 
 Walk them through it:
 
-1. **Make a tag.** Name it after the calendar it sends — `1_Day_Calendar`,
+1. **Make a tag.** Name it after the calendar it sends, `1_Day_Calendar`,
    `3_Day_Calendar`, whatever calendars they actually offer. One tag per calendar.
 2. **Make an automation** triggered by **Contact event occurs → Tag applied →**
    that tag.
@@ -283,7 +283,7 @@ https://their-booking-link?utm_content={keyword}
 ```
 
 4. **The `{keyword}` has to be the real ManyChat field, not typed text.** They insert
-   it with the field picker — the little `{ }` button — and choose their `keyword`
+   it with the field picker, the little `{ }` button, and choose their `keyword`
    field. In the editor it then shows as a **blue chip**.
 
    If it is plain black text, ManyChat sends the literal characters `{keyword}` to
@@ -311,7 +311,7 @@ Whatever fires when a call is actually booked POSTs to the booking address. Fiel
 }
 ```
 
-Use their tool's own merge-field syntax — GoHighLevel and Calendly differ. If you do
+Use their tool's own merge-field syntax, GoHighLevel and Calendly differ. If you do
 not know it, look it up rather than inventing field names.
 
 The keyword arrives two ways: from `utm_content` on the booking link, and from
@@ -319,24 +319,23 @@ The keyword arrives two ways: from `utm_content` on the booking link, and from
 
 ### The sales tracker habit
 
-**At the moment the call is booked** — not when it closes, not at the end of the week
-— whoever books it pastes that person's **ManyChat conversation link** onto the row.
+**At the moment the call is booked**, not when it closes, not at the end of the week,  whoever books it pastes that person's **ManyChat conversation link** onto the row.
 
 The timing is the whole point. They are already looking at the conversation when they
 book, so it takes three seconds. Left until the sale closes, the conversation is
 twelve messages back, nobody remembers which Sarah it was, and the row stays blank.
 
 Check they actually have that column. If they do not, tell them to add it now, before
-setup finishes — retrofitting it later means the sales already in the sheet can never
+setup finishes, retrofitting it later means the sales already in the sheet can never
 be attributed.
 
 **To check either endpoint is live**, open its address in a browser. It answers with
 whether the secret is right and what it expects.
 
-## PHASE 5 — Set the sales calendars
+## PHASE 5, Set the sales calendars
 
 You asked which calendars are sales calls in question 8. Put their ids into
-`salesCalendarIds` now — do not wait for bookings to accumulate first. A dashboard
+`salesCalendarIds` now, do not wait for bookings to accumulate first. A dashboard
 that shows zero booked calls for a week because this was left for later is a
 dashboard they stop trusting.
 
@@ -363,7 +362,7 @@ against what they told you. Two things to look for:
   booked count that is quietly too low. The script flags them. If both are genuinely
   sales calls, pin both.
 
-## PHASE 6 — Verify. Do not skip this.
+## PHASE 6, Verify. Do not skip this.
 
 Open the dashboard and check, out loud, all four:
 
@@ -414,7 +413,7 @@ src/lib/ingest/       pulling data in (Meta spend, the sheet, currency rates)
 src/app/api/webhooks/ things pushed at us (keyword DMs, bookings)
 src/app/ads-v2/       the dashboard itself. ads-v2.css is self-contained
 supabase/             the database, in two files. Safe to re-run
-scripts/              setup, db, deploy, doctor, calendars — read these first
+scripts/              setup, db, deploy, doctor, calendars, read these first
 ```
 
 `docs/DATA-RULES.md` explains what every number means and when it is allowed to
@@ -441,7 +440,7 @@ runs that were skipped. Read them before theorising.
 ## How to talk to them
 
 Short sentences. No jargon that you do not define in the same breath. When
-something is broken, say what is broken and what you are doing about it — do not
+something is broken, say what is broken and what you are doing about it, do not
 bury it at the end of a status update.
 
 They are a coach, not a developer. They do not want to understand this. They want

@@ -19,7 +19,7 @@ Any other account is pulled with Meta's hourly breakdown, each hour is converted
 a real instant, and the hours are re-bucketed onto reporting-timezone days.
 
 Every row is stamped with the timezone it was cut on, and **every read filters on
-that stamp**. A row without it is invisible — it exists, it looks fine in the
+that stamp**. A row without it is invisible, it exists, it looks fine in the
 database, and it contributes to nothing. If spend is missing, this is the first
 thing to check.
 
@@ -37,7 +37,7 @@ one currency. The `currency` field describes what Meta *bills the ad account* in
 and applies to spend and budgets only.
 
 This is not a style preference. Applying an ad account's currency to the sales in
-the tracker once turned a $1,200 sale into $842, and nothing looked broken — a
+the tracker once turned a $1,200 sale into $842, and nothing looked broken, a
 slightly-too-small number is indistinguishable from a real one.
 
 **Collected vs contracted.** Collected is cash in the bank. Contracted is the value
@@ -57,7 +57,7 @@ and from the DM itself on the response side.
 
 Five ways, best evidence first. The first one that hits wins:
 
-1. a human resolution — someone looked and decided
+1. a human resolution, someone looked and decided
 2. the subscriber id carried through on the booking payload
 3. the subscriber ↔ contact bridge recorded by the booking webhook
 4. the identity layer, if you populate one
@@ -70,14 +70,14 @@ assigned to the most plausible keyword.
 
 In passes, each writing its own evidence into the row:
 
-- **retired ad** — the DM came from an ad that is no longer being run
-- **single pre-sale keyword** — this buyer only ever typed one keyword before
+- **retired ad**, the DM came from an ad that is no longer being run
+- **single pre-sale keyword**, this buyer only ever typed one keyword before
   buying, so it is the only possibility, not a guess
-- **human resolution** — a person decided; this outranks every computed answer and
+- **human resolution**, a person decided; this outranks every computed answer and
   survives every rebuild
-- **organic** — the keyword belongs to organic content, not a paid ad. Real revenue,
+- **organic**, the keyword belongs to organic content, not a paid ad. Real revenue,
   never credited to ad spend
-- **human-confirmed non-ad** — a person looked and said this did not come from an ad
+- **human-confirmed non-ad**, a person looked and said this did not come from an ad
 
 A sale that fits none of these keeps its blank and shows as unknown.
 
@@ -113,7 +113,7 @@ drag the rate down makes the number useless exactly when you are scaling.
 
 **Which calendars count** is set in `salesCalendarIds`. Only sales calls. Onboarding calls, coaching calls and reschedule calendars are not bookings.
 
-Watch for near-duplicate calendars — same name, different id. CRMs produce these
+Watch for near-duplicate calendars, same name, different id. CRMs produce these
 constantly and bookings split silently between them, which shows up as a booked
 count that is quietly too low. `npm run calendars` lists what is really in your
 data and flags likely duplicates.
@@ -134,7 +134,7 @@ arriving the day after you paused the ad probably came from the ad.
 
 ## Freshness and caching
 
-The page reads **precomputed window snapshots**, not raw rows — that is why it opens
+The page reads **precomputed window snapshots**, not raw rows, that is why it opens
 instantly. Each snapshot is stamped with a data version. The sync bumps that version
 after the facts are rebuilt, which invalidates everything cached.
 
@@ -148,8 +148,8 @@ rather than shown as zero.
 
 ## What is recorded
 
-- `adsv2_sync_runs` — every run, including ones that were skipped and why
-- `adsv2_alerts` — every problem, deduped so one problem is one alert
+- `adsv2_sync_runs`, every run, including ones that were skipped and why
+- `adsv2_alerts`, every problem, deduped so one problem is one alert
 
 A run that finds nothing still writes a row. A sync that vanishes silently is a sync
 nobody can prove stopped happening, and proving it is the point.

@@ -14,7 +14,7 @@ hits a landing page, the pixel fires, and Facebook tells you which ad made the s
 
 **DM ads don't work like that.** The conversation happens inside Instagram. Facebook
 never sees the booking, never sees the call, never sees the money. So the column you
-actually care about — which ad produced buyers — doesn't exist in Ads Manager, and
+actually care about, which ad produced buyers, doesn't exist in Ads Manager, and
 never will.
 
 And the one number it does give you is wrong. Facebook's cost per DM counts
@@ -49,8 +49,8 @@ $600 and produced nothing.
 **Paste this repo's link into a [Claude Code](https://claude.com/claude-code) session
 and tell it to install this.**
 
-It'll ask about your business — what you use for DMs, what you book calls with, what
-your sales tracker columns are called — and build the whole thing around your answers.
+It'll ask about your business, what you use for DMs, what you book calls with, what
+your sales tracker columns are called, and build the whole thing around your answers.
 You don't edit any files.
 
 You'll need to grab three tokens from three websites, add a couple of steps in
@@ -70,7 +70,7 @@ About 45 minutes, most of it waiting for accounts to create.
 Ad says "DM me STRONG"   →   name the ad:   STRONG
 ```
 
-Extra text is allowed, but then the keyword has to be the **last word** —
+Extra text is allowed, but then the keyword has to be the **last word**, 
 `Lead Magnet | STRONG` works, `STRONG retarget` does not.
 
 That word is the whole connection between money going out and DMs coming in. An ad
@@ -79,7 +79,7 @@ named wrong still shows its spend and sits there with zeros beside it forever.
 **2. Never run two ads with the same keyword at once.**
 
 One live ad, one word. If two ads both say DM me STRONG, nothing can tell you which one
-produced the sale. Reusing a word later is fine — just leave a few weeks.
+produced the sale. Reusing a word later is fine, just leave a few weeks.
 
 ---
 
@@ -94,7 +94,7 @@ Think of it like a promo code. One code per ad, and it rides all the way to the 
 | The booking | `utm_content` on the booking link, sent automatically when your setter tags them |
 | The sale | the ManyChat link pasted on the row when the call is **booked** |
 
-Four links. Break one and that person's journey goes dark from there — not wrong, just
+Four links. Break one and that person's journey goes dark from there, not wrong, just
 unknown, which the dashboard shows you honestly.
 
 **Show rate and revenue come from your sales tracker**, ticked and typed by whoever
@@ -122,7 +122,7 @@ Hover any number to see what it was built from.
 | --- | --- |
 | A Meta ad account | the spend |
 | ManyChat | the DMs |
-| A booking tool — GoHighLevel, Calendly, whatever | the calls |
+| A booking tool, GoHighLevel, Calendly, whatever | the calls |
 | Your sales tracker in Google Sheets | the money |
 | A free Supabase account | where the numbers get stored |
 | A free Vercel account | where the website lives |
@@ -147,16 +147,16 @@ on or not.
 
 ## Docs
 
-- **[Setup guide (PDF)](docs/DM-Ads-Attribution-Guide-v4.pdf)** — why this exists, and every step, for a human
-- **[DATA-RULES.md](docs/DATA-RULES.md)** — what every number means and when it's allowed to change
-- **[CLAUDE.md](CLAUDE.md)** — how an AI assistant should install and look after this
+- **[Setup guide (PDF)](docs/DM-Ads-Attribution-Guide-v4.pdf)**, why this exists, and every step, for a human
+- **[DATA-RULES.md](docs/DATA-RULES.md)**, what every number means and when it's allowed to change
+- **[CLAUDE.md](CLAUDE.md)**, how an AI assistant should install and look after this
 
 ---
 
 ## Layout
 
 ```
-src/lib/ads-v2/       the engine — facts.ts decides what everything means
+src/lib/ads-v2/       the engine, facts.ts decides what everything means
 src/lib/ingest/       pulling data in (Meta spend, your sheet, currency rates)
 src/app/api/webhooks/ things pushed at us (keyword DMs, bookings)
 src/app/ads-v2/       the dashboard
